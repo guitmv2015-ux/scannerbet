@@ -1,300 +1,224 @@
 /**
- * SPORTSBOOK STRUCTURED SCANNERBET VIEW
- * Real betting platform layout with Sports Navigation Tree (Left), Matches & Odds Grid (Center), and Betslip Comparator (Right).
+ * SCANNERBET DEFINITIVE SCANNER VIEW
+ * Real-time Odds API Integration - Phase 2
  */
 
 class ScannerView {
-  static render(params = {}) {
+  static async render() {
     const main = document.getElementById('app-main');
     if (!main) return;
 
-    const state = window.sbState.getState();
-    const sports = window.SCANNERBET_CONFIG.SPORTS;
-    const bookmakers = window.SCANNERBET_CONFIG.BOOKMAKERS;
-    const events = state.events || [];
-
-    let selectedSportId = params.sportId || 'futebol';
-    let selectedEventId = params.eventId || (events[0] ? events[0].id : null);
-    let selectedSelectionIndex = params.selIndex || 0;
-
-    const activeSport = sports.find(s => s.id === selectedSportId) || sports[0];
-    const activeEvent = events.find(e => e.id === selectedEventId) || events[0];
-
-    // Current selected market and selection for the betslip panel
-    const currentMarket = (activeEvent && activeEvent.markets[0]) ? activeEvent.markets[0] : null;
-    const currentSelection = (currentMarket && currentMarket.selections[selectedSelectionIndex]) 
-      ? currentMarket.selections[selectedSelectionIndex] 
-      : (currentMarket ? currentMarket.selections[0] : null);
-
     main.innerHTML = `
-      <div class="space-y-6 animate-in fade-in duration-300">
-        
-        <!-- Header -->
-        <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-surface-800 pb-4">
-          <div>
-            <div class="flex items-center gap-2 text-xs font-mono font-bold text-brand-400 uppercase tracking-widest">
-              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
-              <span>ESTRUTURA SPORTSBOOK • SCANNERBET V3</span>
-            </div>
-            <h1 class="text-2xl md:text-3xl font-black text-white font-heading">Painel de Comparação & Análise</h1>
+      <div class="flex flex-col h-[calc(100vh-5rem)]">
+        <!-- Top Toolbar / Filters -->
+        <div class="h-16 border-b border-[#262626] bg-[#0a0a0a] flex items-center px-6 gap-4 shrink-0">
+          <div class="flex items-center gap-2 text-[#a3a3a3]">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <span class="text-sm font-bold tracking-widest uppercase">Scanner em Tempo Real</span>
           </div>
 
-          <div class="flex items-center gap-2 bg-surface-950 px-4 py-2 rounded-2xl border border-surface-800 text-xs">
-            <span class="text-surface-400">Status dos Providers:</span>
-            <span class="text-emerald-400 font-bold flex items-center gap-1">
-              <span class="w-2 h-2 rounded-full bg-emerald-500"></span> 4 Casas Ativas
-            </span>
-          </div>
-        </div>
+          <div class="h-8 w-px bg-[#262626] mx-2"></div>
 
-        <!-- MAIN THREE-COLUMN SPORTSBOOK LAYOUT -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <!-- Select Sport -->
+          <select id="scanner-sport-select" class="bg-[#141414] border border-[#262626] text-white text-xs font-bold rounded px-3 py-1.5 focus:outline-none focus:border-[#a3e635]">
+            <option value="">Carregando esportes...</option>
+          </select>
           
-          <!-- LEFT COLUMN: SPORTS & LEAGUES NAVIGATION TREE (3 cols) -->
-          <div class="lg:col-span-3 space-y-4">
-            <div class="glass-panel p-4 rounded-3xl border border-surface-800 space-y-4">
-              <div class="flex items-center justify-between border-b border-surface-800 pb-3">
-                <h3 class="font-black text-white text-xs uppercase tracking-wider flex items-center gap-2">
-                  <span>🏆</span> Esportes & Ligas
-                </h3>
-                <span class="text-[10px] bg-brand-500/20 text-brand-400 font-bold px-2 py-0.5 rounded-full">Ao Vivo</span>
-              </div>
+          <button id="scanner-search-btn" class="btn-primary py-1.5 px-6 ml-auto" disabled>
+            Buscar Partidas
+          </button>
+        </div>
 
-              <!-- Sports List -->
-              <div class="space-y-1">
-                ${sports.map(sport => `
-                  <button data-sport="${sport.id}" class="scanner-sport-tree-item w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                    selectedSportId === sport.id 
-                      ? 'btn-primary-gradient text-white shadow-lg' 
-                      : 'text-surface-300 hover:text-white hover:bg-surface-800/60'
-                  }">
-                    <span class="flex items-center gap-2">
-                      <span class="text-base">${sport.icon}</span>
-                      <span>${sport.name}</span>
-                    </span>
-                    <span class="text-[10px] px-2 py-0.5 rounded-full bg-surface-950/60 text-surface-400 font-mono">
-                      ${events.filter(e => e.sportId === sport.id).length}
-                    </span>
-                  </button>
-                `).join('')}
-              </div>
-
-              <!-- Top Leagues Quick Links -->
-              <div class="pt-3 border-t border-surface-800 space-y-2">
-                <span class="text-[10px] text-surface-400 uppercase font-mono font-bold tracking-widest block">Ligas em Destaque</span>
-                <div class="space-y-1 text-xs">
-                  <div class="p-2 rounded-xl bg-surface-950/80 border border-surface-800/80 text-surface-200 font-semibold flex items-center gap-2 cursor-pointer hover:border-brand-500">
-                    <span>🇧🇷</span> Brasileirão Série A
-                  </div>
-                  <div class="p-2 rounded-xl bg-surface-950/80 border border-surface-800/80 text-surface-200 font-semibold flex items-center gap-2 cursor-pointer hover:border-brand-500">
-                    <span>🇪🇺</span> Champions League
-                  </div>
-                  <div class="p-2 rounded-xl bg-surface-950/80 border border-surface-800/80 text-surface-200 font-semibold flex items-center gap-2 cursor-pointer hover:border-brand-500">
-                    <span>🇺🇸</span> NBA Basketball
-                  </div>
-                </div>
+        <!-- Content Area -->
+        <div class="flex-1 overflow-hidden flex">
+          
+          <!-- Events List (Sidebar) -->
+          <div class="w-[350px] border-r border-[#262626] bg-[#0a0a0a] flex flex-col h-full">
+            <div class="p-4 border-b border-[#262626] flex items-center justify-between">
+              <span class="text-xs font-bold text-[#737373] uppercase">Eventos Disponíveis</span>
+              <span id="scanner-event-count" class="badge bg-[#262626] text-white">0</span>
+            </div>
+            <div id="scanner-events-list" class="flex-1 overflow-y-auto p-2 space-y-2">
+              <div class="text-center p-6 text-[11px] text-[#737373]">
+                Selecione um esporte e clique em buscar para carregar os eventos.
               </div>
             </div>
           </div>
 
-          <!-- CENTER COLUMN: MATCHES & ODDS MATRIX GRID (6 cols) -->
-          <div class="lg:col-span-6 space-y-4">
-            
-            <div class="flex items-center justify-between bg-surface-900/90 p-3 rounded-2xl border border-surface-800 text-xs">
-              <span class="font-bold text-white flex items-center gap-2">
-                <span>⚽</span> Partidas Disponíveis (${events.filter(e => e.sportId === selectedSportId).length})
-              </span>
-              <div class="flex items-center gap-2 text-[11px]">
-                <button class="px-3 py-1 rounded-lg bg-brand-600 text-white font-bold">Todas</button>
-                <button class="px-3 py-1 rounded-lg bg-surface-800 text-surface-300">Ao Vivo</button>
-              </div>
-            </div>
-
-            <!-- Matches Catalog List -->
-            <div class="space-y-4">
-              ${events.filter(e => e.sportId === selectedSportId).map(ev => `
-                <div class="glass-panel p-5 rounded-3xl border ${
-                  activeEvent && activeEvent.id === ev.id ? 'glow-card-purple bg-surface-900/95' : 'border-surface-800 hover:border-surface-700'
-                } space-y-4 transition-all">
-                  
-                  <!-- Match Header -->
-                  <div class="flex items-center justify-between text-xs border-b border-surface-800/60 pb-3">
-                    <div class="flex items-center gap-2">
-                      <span class="font-black text-brand-400 uppercase tracking-wider">${ev.leagueName}</span>
-                      ${ev.isLive ? `
-                        <span class="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/40 text-[10px] font-bold animate-pulse">
-                          ${ev.status}
-                        </span>
-                      ` : `
-                        <span class="text-surface-400 font-mono text-[11px]">${ev.time}</span>
-                      `}
-                    </div>
-                    <span class="text-[11px] text-surface-400">${ev.stadium}</span>
-                  </div>
-
-                  <!-- Teams & Scores -->
-                  <div class="flex items-center justify-between py-1">
-                    <div class="font-black text-white text-base font-heading flex items-center gap-3">
-                      <span>${ev.homeTeam}</span>
-                      ${ev.isLive ? `<span class="text-rose-400 text-sm font-mono">[${ev.scoreLive.split('-')[0].trim()}]</span>` : ''}
-                    </div>
-                    <span class="text-xs font-black text-brand-500 px-3 py-1 bg-brand-500/10 rounded-xl border border-brand-500/30">VS</span>
-                    <div class="font-black text-white text-base font-heading flex items-center gap-3">
-                      ${ev.isLive ? `<span class="text-rose-400 text-sm font-mono">[${ev.scoreLive.split('-')[1].trim()}]</span>` : ''}
-                      <span>${ev.awayTeam}</span>
-                    </div>
-                  </div>
-
-                  <!-- Quick Odds Grid Buttons (Sportsbook Style) -->
-                  ${ev.markets[0] ? `
-                    <div class="space-y-2 pt-2 border-t border-surface-800/60">
-                      <div class="flex items-center justify-between text-[11px] text-surface-400 font-semibold">
-                        <span>${ev.markets[0].name}</span>
-                        <span class="text-brand-400 font-mono">Melhor Cotação Destacada</span>
-                      </div>
-
-                      <div class="grid grid-cols-3 gap-2 text-xs">
-                        ${ev.markets[0].selections.map((sel, sIdx) => `
-                          <button 
-                            class="scanner-select-odd-pill p-3 rounded-2xl bg-surface-950 border ${
-                              activeEvent.id === ev.id && selectedSelectionIndex === sIdx ? 'border-brand-500 bg-brand-500/20 text-white glow-card-purple' : 'border-surface-800 text-surface-200 hover:border-surface-700'
-                            } flex flex-col items-center justify-between gap-1 transition-all"
-                            data-event-id="${ev.id}"
-                            data-selection-index="${sIdx}"
-                          >
-                            <span class="text-[10px] text-surface-400 font-semibold truncate w-full text-center">${sel.name}</span>
-                            <span class="text-sm font-black ${sel.best ? 'text-emerald-400' : 'text-white'} font-mono">${sel.odds[sel.best].toFixed(2)}</span>
-                            <span class="text-[9px] uppercase font-bold text-surface-500">${sel.best}</span>
-                          </button>
-                        `).join('')}
-                      </div>
-                    </div>
-                  ` : ''}
-
+          <!-- Main Analysis Area -->
+          <div class="flex-1 bg-surface-950 flex flex-col h-full relative">
+            <div id="scanner-main-content" class="absolute inset-0 overflow-y-auto p-8">
+              <div class="flex flex-col items-center justify-center h-full text-center">
+                <div class="w-16 h-16 rounded-full bg-[#1a1a1a] flex items-center justify-center text-[#737373] mb-4">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
                 </div>
-              `).join('')}
-            </div>
-
-          </div>
-
-          <!-- RIGHT COLUMN: BOLETIM DE APOSTAS & COMPARADOR (3 cols) -->
-          <div class="lg:col-span-3 space-y-4">
-            <div class="glass-panel p-5 rounded-3xl border border-brand-500/40 glow-card-purple space-y-5 sticky top-20">
-              
-              <div class="flex items-center justify-between border-b border-surface-800 pb-3">
-                <h3 class="font-black text-white text-xs uppercase tracking-wider flex items-center gap-2">
-                  <span>⚡</span> Boletim do Scanner
-                </h3>
-                <span class="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-2.5 py-0.5 rounded-full font-bold">EV+ Calculado</span>
+                <h3 class="text-lg font-bold text-white mb-2">Nenhum evento selecionado</h3>
+                <p class="text-sm text-[#737373] max-w-md">Selecione uma partida na lista lateral para carregar a matriz de comparação de odds em tempo real.</p>
               </div>
-
-              ${activeEvent && currentSelection ? `
-                <div class="space-y-4 text-xs">
-                  <!-- Match Summary -->
-                  <div class="bg-surface-950 p-4 rounded-2xl border border-surface-800 space-y-2">
-                    <span class="text-[10px] text-brand-400 font-bold uppercase tracking-wider block">${activeEvent.leagueName}</span>
-                    <h4 class="font-black text-white text-sm">${activeEvent.homeTeam} vs ${activeEvent.awayTeam}</h4>
-                    <div class="text-surface-300 pt-1">
-                      Seleção: <strong class="text-white">${currentSelection.name}</strong>
-                    </div>
-                  </div>
-
-                  <!-- Bookmakers Comparison Matrix -->
-                  <div class="space-y-2">
-                    <span class="text-[10px] text-surface-400 font-mono font-bold uppercase tracking-widest block">Comparação nas Casas:</span>
-                    <div class="grid grid-cols-2 gap-2 text-center">
-                      <div class="p-2.5 rounded-xl bg-surface-950 border ${currentSelection.best === 'betano' ? 'best-odd' : 'border-surface-800'}">
-                        <span class="text-[10px] text-surface-400 block font-semibold">Betano</span>
-                        <strong class="text-sm font-black font-mono">${currentSelection.odds.betano.toFixed(2)}</strong>
-                      </div>
-                      <div class="p-2.5 rounded-xl bg-surface-950 border ${currentSelection.best === 'bet365' ? 'best-odd' : 'border-surface-800'}">
-                        <span class="text-[10px] text-surface-400 block font-semibold">bet365</span>
-                        <strong class="text-sm font-black font-mono">${currentSelection.odds.bet365.toFixed(2)}</strong>
-                      </div>
-                      <div class="p-2.5 rounded-xl bg-surface-950 border ${currentSelection.best === 'superbet' ? 'best-odd' : 'border-surface-800'}">
-                        <span class="text-[10px] text-surface-400 block font-semibold">Superbet</span>
-                        <strong class="text-sm font-black font-mono">${currentSelection.odds.superbet.toFixed(2)}</strong>
-                      </div>
-                      <div class="p-2.5 rounded-xl bg-surface-950 border ${currentSelection.best === 'kto' ? 'best-odd' : 'border-surface-800'}">
-                        <span class="text-[10px] text-surface-400 block font-semibold">KTO</span>
-                        <strong class="text-sm font-black font-mono">${currentSelection.odds.kto.toFixed(2)}</strong>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Value Index Banner -->
-                  <div class="p-3 bg-emerald-950/40 rounded-xl border border-emerald-500/40 text-emerald-200 text-[11px] leading-tight">
-                    💡 <strong>Melhor Odd:</strong> <span class="text-emerald-400 font-bold">${currentSelection.odds[currentSelection.best].toFixed(2)}</span> na <strong>${currentSelection.best.toUpperCase()}</strong>.
-                  </div>
-
-                  <!-- MAIN TRIGGER ACTION BUTTON -->
-                  <button 
-                    id="scanner-main-run-ai-btn"
-                    class="btn-primary-gradient w-full py-4 rounded-2xl text-white font-black text-xs transition-all shadow-xl flex items-center justify-center gap-2"
-                  >
-                    <span>⚡</span> ANALISAR COM SCANNERBET
-                  </button>
-                </div>
-              ` : `
-                <div class="p-6 text-center text-xs text-surface-400">Selecione uma aposta no painel central para analisar.</div>
-              `}
-
             </div>
           </div>
 
         </div>
-
       </div>
     `;
 
-    ScannerView.bindEvents(activeEvent, currentSelection);
+    await ScannerView.loadSports();
+    ScannerView.bindEvents();
   }
 
-  static bindEvents(activeEvent, currentSelection) {
-    // Sport Tree Items Click
-    document.querySelectorAll('.scanner-sport-tree-item').forEach(btn => {
-      btn.onclick = () => {
-        const sportId = btn.getAttribute('data-sport');
-        ScannerView.render({ sportId });
-      };
-    });
-
-    // Odd Pill Click
-    document.querySelectorAll('.scanner-select-odd-pill').forEach(pill => {
-      pill.onclick = () => {
-        const eventId = pill.getAttribute('data-event-id');
-        const selIndex = parseInt(pill.getAttribute('data-selection-index') || '0');
-        ScannerView.render({ eventId, selIndex });
-      };
-    });
-
-    // Main Run AI Button Click Action
-    const runAiBtn = document.getElementById('scanner-main-run-ai-btn');
-    if (runAiBtn && activeEvent && currentSelection) {
-      runAiBtn.onclick = async () => {
-        window.Toast.show(`Analisando "${currentSelection.name}" com Inteligência Artificial...`, 'info');
-
-        try {
-          const res = await window.AiEngineService.analyzeBetSelection({
-            event: activeEvent,
-            market: { name: activeEvent.markets[0]?.name || 'Mercado da Partida' },
-            selection: { name: currentSelection.name },
-            bestOdd: currentSelection.odds[currentSelection.best],
-            bookmaker: currentSelection.best.toUpperCase(),
-            oddsObj: currentSelection.odds
-          });
-
-          window.ModalManager.openAiAnalysisModal(res);
-          window.Toast.show('Análise do ScannerBet gerada com sucesso!', 'success');
-        } catch (err) {
-          if (err.message === 'PAYWALL_EXCEEDED') {
-            window.ModalManager.openPaywallModal();
-          } else {
-            window.Toast.show(err.message || 'Erro ao processar análise.', 'error');
-          }
-        }
-      };
+  static async loadSports() {
+    const select = document.getElementById('scanner-sport-select');
+    const searchBtn = document.getElementById('scanner-search-btn');
+    
+    try {
+      const sports = await window.EventsService.getActiveSports();
+      select.innerHTML = sports.map(s => `<option value="${s.key}">${s.title}</option>`).join('');
+      searchBtn.disabled = false;
+    } catch (e) {
+      select.innerHTML = `<option value="">Erro ao carregar esportes</option>`;
+      console.error(e);
+      window.sbApp.showToast('Erro de API', 'Não foi possível carregar os esportes. Verifique se a API_KEY está configurada.', 'error');
     }
+  }
+
+  static bindEvents() {
+    const searchBtn = document.getElementById('scanner-search-btn');
+    const select = document.getElementById('scanner-sport-select');
+    
+    searchBtn.addEventListener('click', async () => {
+      const sportKey = select.value;
+      if (!sportKey) return;
+      
+      const listContainer = document.getElementById('scanner-events-list');
+      const countEl = document.getElementById('scanner-event-count');
+      const mainContent = document.getElementById('scanner-main-content');
+      
+      searchBtn.disabled = true;
+      searchBtn.innerHTML = 'Buscando...';
+      listContainer.innerHTML = `<div class="text-center p-4 text-[#a3e635] text-xs font-bold animate-pulse">Consultando The Odds API...</div>`;
+      mainContent.innerHTML = ''; // Clear main area
+      
+      try {
+        const events = await window.EventsService.getLiveEvents(sportKey);
+        countEl.textContent = events.length;
+        
+        if (events.length === 0) {
+          listContainer.innerHTML = `<div class="text-center p-6 text-[11px] text-[#737373]">Nenhum evento encontrado para este esporte no momento.</div>`;
+        } else {
+          listContainer.innerHTML = events.map(evt => `
+            <div class="scanner-event-card p-3 rounded-lg bg-[#0f0f0f] border border-[#262626] hover:border-[#a3e635] cursor-pointer transition-colors" data-id="${evt.id}">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-[9px] font-bold text-[#737373] tracking-widest">${new Date(evt.startTime).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}</span>
+                <span class="text-[9px] font-bold ${evt.status === 'AO VIVO' ? 'text-red-500' : 'text-emerald-500'} bg-white/5 px-2 py-0.5 rounded">${evt.status}</span>
+              </div>
+              <p class="text-xs font-bold text-white mb-1 truncate">${evt.homeTeam}</p>
+              <p class="text-xs font-bold text-white truncate">${evt.awayTeam}</p>
+            </div>
+          `).join('');
+          
+          // Bind click to load odds
+          const cards = listContainer.querySelectorAll('.scanner-event-card');
+          cards.forEach(card => {
+            card.addEventListener('click', () => {
+              // visual selection
+              cards.forEach(c => c.classList.remove('border-[#a3e635]', 'bg-[#1a1a1a]'));
+              card.classList.add('border-[#a3e635]', 'bg-[#1a1a1a]');
+              
+              const evtId = card.getAttribute('data-id');
+              const selectedEvent = events.find(e => e.id === evtId);
+              ScannerView.renderEventAnalysis(selectedEvent);
+            });
+          });
+        }
+      } catch (e) {
+        listContainer.innerHTML = `<div class="text-center p-4 text-red-500 text-xs">Falha na integração com a API.</div>`;
+      } finally {
+        searchBtn.disabled = false;
+        searchBtn.innerHTML = 'Buscar Partidas';
+      }
+    });
+  }
+
+  static renderEventAnalysis(event) {
+    const mainContent = document.getElementById('scanner-main-content');
+    
+    // Convert Raw Bookmakers to normalized ScannerBet structure
+    const normalizedMarkets = window.OddsProviderService.getNormalizedOddsForEvent(event);
+    
+    if (normalizedMarkets.length === 0) {
+      mainContent.innerHTML = `
+        <div class="premium-card p-8 text-center max-w-lg mx-auto mt-10">
+          <h2 class="text-xl font-bold text-white mb-2">${event.homeTeam} x ${event.awayTeam}</h2>
+          <p class="text-[#737373] text-sm">Nenhuma odd disponível nas casas de apostas monitoradas para este evento no momento.</p>
+        </div>
+      `;
+      return;
+    }
+
+    // Render Event Header
+    let html = `
+      <div class="mb-8">
+        <div class="flex items-center gap-3 mb-2">
+          <span class="badge bg-[#141414] border border-[#262626] text-[#a3a3a3]">${event.sportTitle}</span>
+          <span class="badge ${event.status === 'AO VIVO' ? 'badge-primary bg-red-500/10 text-red-500' : 'badge-accent'}">${event.status}</span>
+        </div>
+        <h1 class="text-3xl font-black text-white tracking-tight">${event.homeTeam} <span class="text-[#737373] font-normal mx-2">vs</span> ${event.awayTeam}</h1>
+        <p class="text-sm text-[#737373] mt-2">Data do Evento: ${new Date(event.startTime).toLocaleString('pt-BR')}</p>
+      </div>
+      
+      <div class="space-y-8">
+    `;
+
+    // Render each market table
+    normalizedMarkets.forEach(market => {
+      html += `
+        <div class="premium-card overflow-hidden">
+          <div class="bg-[#1a1a1a] p-4 border-b border-[#262626] flex items-center justify-between">
+            <h3 class="text-sm font-bold text-white uppercase tracking-wider">${market.name}</h3>
+          </div>
+          
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="border-b border-[#262626] bg-[#0a0a0a]">
+                  <th class="p-4 text-xs font-bold text-[#737373] uppercase tracking-wider font-mono">Seleção</th>
+                  <th class="p-4 text-xs font-bold text-[#737373] uppercase tracking-wider font-mono">⭐ Melhor Odd</th>
+                  <th class="p-4 text-xs font-bold text-[#737373] uppercase tracking-wider font-mono">Casa</th>
+                  <th class="p-4 text-xs font-bold text-[#737373] uppercase tracking-wider font-mono">Última Atualização</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-[#262626]">
+                ${market.selections.map(sel => {
+                  if (!sel.bestOdd) return '';
+                  const timeStr = new Date(sel.bestOdd.timestamp).toLocaleTimeString('pt-BR');
+                  return `
+                    <tr class="hover:bg-[#141414] transition-colors group">
+                      <td class="p-4">
+                        <span class="text-sm font-bold text-white">${sel.name}</span>
+                      </td>
+                      <td class="p-4">
+                        <span class="text-lg font-black text-[#a3e635] tracking-tighter">${parseFloat(sel.bestOdd.odd).toFixed(2)}</span>
+                      </td>
+                      <td class="p-4">
+                        <span class="inline-flex items-center gap-2 text-xs font-bold text-white bg-[#262626] px-2 py-1 rounded">
+                          ${sel.bestOdd.bookmaker}
+                        </span>
+                      </td>
+                      <td class="p-4 text-xs font-mono text-[#737373]">
+                        ${timeStr}
+                      </td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    });
+
+    html += `</div>`;
+    mainContent.innerHTML = html;
   }
 }
 

@@ -1,133 +1,128 @@
 /**
- * ODDS PROVIDER SERVICE LAYER & NORMALIZER
- * Abstract architecture prepared for real sports API integration.
+ * ODDS NORMALIZER SERVICE
+ * Consumes raw bookmaker data from The Odds API and normalizes it to the ScannerBet Standard Model.
  */
 
-// Base Abstract Provider Interface
-class BaseOddsProvider {
-  constructor(id, name) {
-    this.id = id;
-    this.name = name;
-    this.status = 'Online'; // Online, Warning, Offline
-  }
-
-  async fetchEventOdds(eventId) {
-    throw new Error('fetchEventOdds must be implemented by concrete provider.');
-  }
-}
-
-// Concrete Betano Provider
-class BetanoProvider extends BaseOddsProvider {
-  constructor() { super('betano', 'Betano'); }
-  async fetchEventOdds(eventId) {
-    return { provider: this.id, timestamp: Date.now() };
-  }
-}
-
-// Concrete bet365 Provider
-class Bet365Provider extends BaseOddsProvider {
-  constructor() { super('bet365', 'bet365'); }
-  async fetchEventOdds(eventId) {
-    return { provider: this.id, timestamp: Date.now() };
-  }
-}
-
-// Concrete Superbet Provider
-class SuperbetProvider extends BaseOddsProvider {
-  constructor() { super('superbet', 'Superbet'); }
-  async fetchEventOdds(eventId) {
-    return { provider: this.id, timestamp: Date.now() };
-  }
-}
-
-// Concrete KTO Provider
-class KtoProvider extends BaseOddsProvider {
-  constructor() { super('kto', 'KTO'); }
-  async fetchEventOdds(eventId) {
-    return { provider: this.id, timestamp: Date.now() };
-  }
-}
-
-// Odds Normalizer & Manager Service
 class OddsProviderService {
-  constructor() {
-    this.providers = {
-      betano: new BetanoProvider(),
-      bet365: new Bet365Provider(),
-      superbet: new SuperbetProvider(),
-      kto: new KtoProvider()
-    };
+  
+  // Normalizes raw bookmakers from The Odds API for a specific event
+  getNormalizedOddsForEvent(event) {
+    const config = window.SCANNERBET_CONFIG.API_CONFIG;
     
-    // Start subtle odds variation background loop for realistic live demo
-    this.startLiveSimulation();
-  }
+    if (!config.configured) {
+      return this._getDemoOdds(event);
+    }
 
-  // Find best odd among providers for a selection
-  static identifyBestOdds(selectionOddsObj) {
-    let maxOdd = 0;
-    let bestProvider = null;
+    if (!event.rawBookmakers || event.rawBookmakers.length === 0) {
+      return [];
+    }
 
-    Object.entries(selectionOddsObj).forEach(([providerId, oddValue]) => {
-      if (oddValue > maxOdd) {
-        maxOdd = oddValue;
-        bestProvider = providerId;
-      }
+    const normalizedMarkets = [];
+
+    // The Odds API usually returns data organized by bookmaker -> markets -> outcomes
+    // We want to pivot this to: market -> outcomes -> bookmakers
+    
+    // Step 1: Collect all unique markets
+    const marketMap = new Map();
+
+    event.rawBookmakers.forEach(bookmaker => {
+      bookmaker.markets.forEach(market => {
+        if (!marketMap.has(market.key)) {
+          marketMap.set(market.key, {
+            id: market.key,
+            name: this._translateMarketName(market.key),
+            selections: new Map() // selectionName -> { outcomeName, oddsByBookmaker }
+          });
+        }
+        
+        const mktObj = marketMap.get(market.key);
+        
+        market.outcomes.forEach(outcome => {
+          if (!mktObj.selections.has(outcome.name)) {
+            mktObj.selections.set(outcome.name, {
+              name: outcome.name,
+              odds: []
+            });
+          }
+          
+          mktObj.selections.get(outcome.name).odds.push({
+            bookmaker: bookmaker.title,
+            bookmakerKey: bookmaker.key,
+            odd: outcome.price,
+            timestamp: new Date(bookmaker.last_update).getTime()
+          });
+        });
+      });
     });
 
-    return { bestProvider, maxOdd };
-  }
-
-  // Simulate discrete odds fluctuations every 12 seconds
-  startLiveSimulation() {
-    setInterval(() => {
-      const state = window.sbState.getState();
-      if (!state.events || state.events.length === 0) return;
-
-      const updatedEvents = state.events.map(event => {
-        // Randomly pick a market selection to adjust slightly
-        const markets = event.markets.map(market => {
-          const selections = market.selections.map(sel => {
-            const shouldFluctuate = Math.random() > 0.6;
-            if (!shouldFluctuate) return sel;
-
-            const providers = ['betano', 'bet365', 'superbet', 'kto'];
-            const randomProv = providers[Math.floor(Math.random() * providers.length)];
-            const currentOdd = sel.odds[randomProv];
-            
-            // Fluctuate by -0.05 to +0.05
-            const delta = (Math.random() * 0.1 - 0.05);
-            const newOdd = parseFloat(Math.max(1.05, currentOdd + delta).toFixed(2));
-
-            const updatedOdds = { ...sel.odds, [randomProv]: newOdd };
-            const { bestProvider } = OddsProviderService.identifyBestOdds(updatedOdds);
-
-            return {
-              ...sel,
-              odds: updatedOdds,
-              best: bestProvider,
-              lastUpdate: Date.now()
-            };
-          });
-
-          return { ...market, selections };
-        });
-
-        return { ...event, markets, lastUpdated: Date.now() };
+    // Step 2: Convert Maps to Arrays and calculate Best Odds
+    for (const [mktKey, mktVal] of marketMap.entries()) {
+      const selectionsArray = Array.from(mktVal.selections.values()).map(sel => {
+        // Find Best Odd
+        const bestOddObj = this.identifyBestOdd(sel.odds);
+        return {
+          name: sel.name,
+          bestOdd: bestOddObj,
+          allOdds: sel.odds
+        };
       });
 
-      window.sbState.setState({ events: updatedEvents });
-    }, 12000);
+      normalizedMarkets.push({
+        id: mktKey,
+        name: mktVal.name,
+        selections: selectionsArray
+      });
+    }
+
+    return normalizedMarkets;
   }
 
-  // Get Health Status of All Odds Providers
-  getProvidersStatus() {
-    return Object.values(this.providers).map(p => ({
-      id: p.id,
-      name: p.name,
-      status: p.status,
-      latency: Math.floor(Math.random() * 45 + 15) + 'ms',
-      lastSync: 'Há 4s'
-    }));
+  // Identify highest odd and its provider
+  identifyBestOdd(oddsArray) {
+    if (!oddsArray || oddsArray.length === 0) return null;
+    
+    return oddsArray.reduce((best, current) => {
+      return (parseFloat(current.odd) > parseFloat(best.odd)) ? current : best;
+    }, oddsArray[0]);
+  }
+
+  _translateMarketName(key) {
+    const translations = {
+      'h2h': 'Resultado Final (1X2)',
+      'spreads': 'Handicap',
+      'totals': 'Mais/Menos Gols (Over/Under)',
+      'outrights': 'Vencedor do Campeonato'
+    };
+    return translations[key] || key;
+  }
+
+  // Internal Fallback DEMO Data
+  _getDemoOdds(event) {
+    const now = Date.now();
+    return [
+      {
+        id: 'h2h',
+        name: 'Resultado Final (1X2) [DEMO]',
+        selections: [
+          {
+            name: event.homeTeam,
+            bestOdd: { bookmaker: 'Betano', odd: '2.10', timestamp: now },
+            allOdds: [
+              { bookmaker: 'Betano', odd: '2.10', timestamp: now },
+              { bookmaker: 'bet365', odd: '2.05', timestamp: now - 5000 }
+            ]
+          },
+          {
+            name: event.awayTeam,
+            bestOdd: { bookmaker: 'Superbet', odd: '3.40', timestamp: now },
+            allOdds: [
+              { bookmaker: 'Betano', odd: '3.20', timestamp: now },
+              { bookmaker: 'Superbet', odd: '3.40', timestamp: now }
+            ]
+          }
+        ]
+      }
+    ];
   }
 }
 

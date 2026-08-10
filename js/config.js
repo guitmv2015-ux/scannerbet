@@ -8,6 +8,13 @@ window.SCANNERBET_CONFIG = {
   TAGLINE: 'Encontre. Compare. Analise.',
   SUPPORT_EMAIL: 'suporte@scannerbet.com.br',
   
+  // Real-time Odds API Configuration
+  API_CONFIG: {
+    configured: true, // Switched to true for Phase 2 Integration
+    baseUrl: '/api',  // Backend Proxy URL
+    updateIntervalMs: 30000 // 30 seconds for polling if applicable
+  },
+  
   // Default Plans Configuration (Editable by Admin)
   PLANS: [
     {

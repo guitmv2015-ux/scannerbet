@@ -17,35 +17,43 @@
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;800&display=swap" rel="stylesheet" />
   
   <!-- Icons -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lucide-static@0.321.0/font/lucide.css" />
+  
+  <!-- Tailwind CSS via CDN (Crucial para as classes utilitárias) -->
+  <script src="https://cdn.tailwindcss.com"></script>
   
   <!-- Main Stylesheet -->
   <link rel="stylesheet" href="css/styles.css" />
   
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%237C3AED'/><path d='M30 70L50 30L70 70H55L50 55L45 70H30Z' fill='white'/></svg>" />
 </head>
-<body class="bg-surface-950 text-surface-100 font-sans antialiased selection:bg-brand-500 selection:text-white min-h-screen flex flex-col">
+<body class="bg-surface-950 text-surface-100 font-sans antialiased min-h-screen flex flex-col">
+
+  <!-- BANNER DE TESTE VISUAL (REMOVER DEPOIS) -->
+  <div style="background-color: #ff0000; color: white; padding: 20px; text-align: center; font-size: 24px; font-weight: bold; border: 5px solid yellow; z-index: 9999; position: relative;">
+    🛑 TESTE VISUAL FUNCIONANDO 🛑 Se você está vendo isso com fundo vermelho e borda amarela, significa que o HTML está carregando perfeitamente.
+  </div>
 
   <!-- Toast Notification Container -->
   <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-3 max-w-sm pointer-events-none"></div>
 
   <!-- Main App Navbar (rendered dynamically based on auth status) -->
-  <header id="app-navbar" class="sticky top-0 z-40 w-full backdrop-blur-xl bg-surface-950/80 border-b border-surface-800/60 transition-all"></header>
+  <header id="app-navbar" class="sticky top-0 z-40 w-full backdrop-blur-xl border-b border-surface-800/60 transition-all"></header>
 
   <!-- Shell Container -->
   <div id="app-shell" class="flex flex-1 w-full relative overflow-x-hidden">
     <!-- Sidebar Navigation (Auth layout) -->
-    <aside id="app-sidebar" class="hidden md:flex flex-col w-64 border-r border-surface-800/60 bg-surface-900/40 p-4 shrink-0 transition-all"></aside>
+    <aside id="app-sidebar" class="hidden md:flex flex-col w-64 border-r border-[#1a1738] bg-[#0f0d24] p-4 shrink-0 transition-all"></aside>
 
     <!-- Main View Content Area -->
     <main id="app-main" class="flex-1 w-full max-w-7xl mx-auto p-4 md:p-6 lg:p-8 pb-24 md:pb-8 min-h-[calc(100vh-4rem)]"></main>
   </div>
 
   <!-- Mobile Bottom Navigation Bar (Auth view) -->
-  <nav id="app-mobile-nav" class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-surface-900/90 backdrop-blur-lg border-t border-surface-800 flex items-center justify-around py-2 px-1"></nav>
+  <nav id="app-mobile-nav" class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#0f0d24] border-t border-[#1a1738] flex items-center justify-around py-2 px-1"></nav>
 
   <!-- Modal Container (For AI Analysis, Checkout, Post Creation, etc.) -->
   <div id="modal-container" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 backdrop-blur-md p-4 overflow-y-auto">
@@ -56,29 +64,29 @@
 
   <!-- ScannerBot AI Assistant Floating Drawer -->
   <div id="ai-assistant-drawer" class="fixed bottom-20 right-4 md:bottom-6 md:right-6 z-40 transition-all duration-300 transform translate-y-full opacity-0 pointer-events-none">
-    <div class="w-80 md:w-96 bg-surface-900 border border-brand-500/30 rounded-2xl shadow-2xl flex flex-col h-[480px] overflow-hidden">
+    <div class="w-80 md:w-96 bg-[#111022] border border-purple-500/40 rounded-2xl shadow-2xl flex flex-col h-[480px] overflow-hidden">
       <!-- Drawer Header -->
-      <div class="p-4 bg-surface-800/80 border-b border-surface-700/60 flex items-center justify-between">
+      <div class="p-4 bg-[#0f0d24] border-b border-surface-800 flex items-center justify-between">
         <div class="flex items-center gap-3">
-          <div class="w-8 h-8 rounded-full bg-brand-600/30 border border-brand-500 flex items-center justify-center text-brand-400">
-            <i class="icon-bot text-lg"></i>
+          <div class="w-8 h-8 rounded-full bg-purple-600/30 border border-purple-500 flex items-center justify-center text-purple-400">
+            🤖
           </div>
           <div>
             <h4 class="font-bold text-sm text-white">ScannerBot IA</h4>
             <p class="text-xs text-surface-400 flex items-center gap-1">
-              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Assistente de Suporte & Dúvidas
+              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Assistente Virtual de Suporte
             </p>
           </div>
         </div>
         <button id="close-ai-assistant-btn" class="text-surface-400 hover:text-white p-1 rounded-lg hover:bg-surface-700/50">
-          <i class="icon-x"></i>
+          ✕
         </button>
       </div>
 
       <!-- Drawer Chat Messages -->
       <div id="ai-chat-messages" class="flex-1 p-4 overflow-y-auto space-y-3 text-xs md:text-sm">
         <div class="flex gap-2 max-w-[85%]">
-          <div class="w-6 h-6 rounded-full bg-brand-600/30 border border-brand-500 flex items-center justify-center text-brand-400 text-xs shrink-0 mt-1">🤖</div>
+          <div class="w-6 h-6 rounded-full bg-purple-600/30 border border-purple-500 flex items-center justify-center text-purple-400 text-xs shrink-0 mt-1">🤖</div>
           <div class="bg-surface-800 p-3 rounded-2xl rounded-tl-none border border-surface-700/50 text-surface-200">
             Olá! Sou o assistente virtual do ScannerBet. Como posso te ajudar hoje sobre comparações de odds, análises da IA ou funcionamento do sistema?
           </div>
@@ -87,18 +95,17 @@
 
       <!-- Drawer Input -->
       <form id="ai-chat-form" class="p-3 border-t border-surface-700/60 bg-surface-950/60 flex gap-2">
-        <input type="text" id="ai-chat-input" placeholder="Digite sua dúvida..." class="flex-1 bg-surface-800/70 border border-surface-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand-500" />
-        <button type="submit" class="bg-brand-600 hover:bg-brand-500 text-white px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-center">
-          <i class="icon-send"></i>
+        <input type="text" id="ai-chat-input" placeholder="Digite sua dúvida..." class="flex-1 bg-surface-800/70 border border-surface-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500" />
+        <button type="submit" class="bg-purple-600 hover:bg-purple-500 text-white px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-center">
+          Enviar ➔
         </button>
       </form>
     </div>
   </div>
 
-  <!-- Floating Assistant Toggle Button -->
-  <button id="toggle-ai-assistant-btn" class="fixed bottom-20 right-4 md:bottom-6 md:right-6 z-30 bg-brand-600 hover:bg-brand-500 text-white p-3.5 rounded-full shadow-lg shadow-brand-500/25 border border-brand-400/40 flex items-center justify-center gap-2 group transition-transform active:scale-95" title="Abrir Assistente IA">
-    <i class="icon-bot text-xl"></i>
-    <span class="hidden group-hover:inline text-xs font-semibold pr-1">Dúvidas?</span>
+  <!-- Floating Assistant Toggle Button (Matching Evolua Chat Purple Circle Widget) -->
+  <button id="toggle-ai-assistant-btn" class="fixed bottom-6 right-6 z-30 w-14 h-14 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-600 text-white shadow-2xl shadow-purple-500/50 border-2 border-white/20 flex items-center justify-center text-2xl group transition-transform active:scale-95 hover:scale-105" title="Abrir Chat de Suporte">
+    💬
   </button>
 
   <!-- Application Scripts -->
@@ -107,6 +114,7 @@
   
   <!-- Services -->
   <script src="js/services/auth.service.js"></script>
+  <script src="js/services/events.service.js"></script>
   <script src="js/services/odds.provider.service.js"></script>
   <script src="js/services/ai.engine.service.js"></script>
   <script src="js/services/community.service.js"></script>
