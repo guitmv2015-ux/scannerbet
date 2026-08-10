@@ -1,6 +1,5 @@
 /**
- * SCANNERBET DEFINITIVE NAVBAR COMPONENT
- * Inspired by Raven UI (Minimalist, Dark, Sleek Icons)
+ * EVOLUA PAINEL EXACT STYLIZED HEADER COMPONENT
  */
 
 class NavbarComponent {
@@ -9,77 +8,64 @@ class NavbarComponent {
     if (!header) return;
 
     const state = window.sbState.getState();
-    const isAuth = !!state.user;
+    const user = state.user;
+    const isAuth = !!user;
 
-    // Generate current date string like Raven (e.g. "10 de Agosto de 2026 - Segunda-feira")
-    const dateOpts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-    const dateString = new Date().toLocaleDateString('pt-BR', dateOpts);
-    const timeHour = new Date().getHours();
-    let greeting = 'Bom dia!';
-    if (timeHour >= 12 && timeHour < 18) greeting = 'Boa tarde!';
-    else if (timeHour >= 18) greeting = 'Boa noite!';
+    const pageLabels = {
+      'dashboard': 'Painel',
+      'scanner': 'ScannerBet Odds & IA',
+      'community': 'Comunidade & Palpites',
+      'metrics': 'Métricas de Acerto',
+      'history': 'Histórico Salvado',
+      'referral': 'Indique e Ganhe',
+      'plans': 'Planos & Assinatura',
+      'blog': 'Blog & Notícias',
+      'admin': 'Painel Administrativo 👑',
+      'settings': 'Configurações',
+      'help': 'Central de Ajuda'
+    };
 
-    const config = window.SCANNERBET_CONFIG.API_CONFIG;
-    const isDemoMode = !config.configured;
+    const activePageLabel = pageLabels[state.currentView] || 'Painel';
+    const firstInitial = user && user.name ? user.name.charAt(0).toUpperCase() : 'G';
+    const userName = user && user.name ? user.name : 'Guilherme';
 
     header.innerHTML = `
-      ${isDemoMode ? `
-        <!-- Demo Mode Transparency Banner -->
-        <div class="w-full bg-[#f59e0b] text-black text-[10px] font-bold tracking-widest uppercase text-center py-1">
-          🟡 Modo Demonstração: Os dados exibidos são simulados. Nenhuma API real conectada.
-        </div>
-      ` : `
-        <div class="w-full bg-[#22c55e] text-black text-[10px] font-bold tracking-widest uppercase text-center py-1">
-          🟢 DADOS EM TEMPO REAL CONECTADOS
-        </div>
-      `}
-      <div class="w-full px-6 h-20 flex items-center justify-between border-b border-[#262626] bg-[#0a0a0a]">
+      <div class="max-w-7xl mx-auto px-4 md:px-6 h-14 flex items-center justify-between gap-4">
         
-        <!-- Left Greeting & Date -->
-        <div class="flex flex-col">
-          <h2 class="text-xl font-bold text-white flex items-center gap-2">
-            ${greeting} <span class="animate-pulse">👋</span>
-          </h2>
-          <p class="text-[11px] text-[#737373] mt-0.5 capitalize">${dateString}</p>
+        <!-- Left Breadcrumb Page Indicator (Exact Evolua Header Style) -->
+        <div class="flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-indigo-500 animate-pulse"></span>
+          <span class="font-bold text-sm text-white font-heading">${activePageLabel}</span>
         </div>
 
-        <!-- Right Header Items -->
-        <div class="flex items-center gap-4">
+        <!-- Right Header Items (Exact Evolua Header Buttons) -->
+        <div class="flex items-center gap-3">
           ${isAuth ? `
-            <!-- Action Icons (View, Refresh, Support) -->
-            <div class="flex items-center gap-2 mr-2">
-              <button class="w-8 h-8 rounded-full flex items-center justify-center text-[#a3a3a3] hover:bg-[#1a1a1a] hover:text-white transition-colors" title="Modo Oculto">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-              </button>
-              <button class="w-8 h-8 rounded-full flex items-center justify-center text-[#a3a3a3] hover:bg-[#1a1a1a] hover:text-white transition-colors" title="Atualizar Dados">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
-              </button>
-              <button onclick="window.sbApp.navigateTo('help')" class="ml-2 btn-primary !rounded-full shadow-[0_0_15px_rgba(163,230,53,0.2)]">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
-                Suporte
-              </button>
-            </div>
+            <!-- Cyan Gradient CTA Pill Button: "🚀 Revenda com sua Marca" -->
+            <button id="nav-cta-upgrade-btn" class="hidden sm:flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-sky-400 to-blue-600 hover:from-sky-300 hover:to-blue-500 text-white font-bold text-xs shadow-lg transition-all">
+              <span>🚀</span> Revenda com sua Marca
+            </button>
 
-            <div class="h-6 w-px bg-[#262626]"></div> <!-- Divider -->
-
-            <!-- Theme & Notifications -->
-            <div class="flex items-center gap-1">
-              <button class="w-9 h-9 rounded-full flex items-center justify-center text-[#a3a3a3] hover:bg-[#1a1a1a] hover:text-white transition-colors relative">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-                <span class="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-500"></span>
-              </button>
-              <button id="theme-toggle-btn" class="w-9 h-9 rounded-full flex items-center justify-center text-[#a3a3a3] hover:bg-[#1a1a1a] hover:text-white transition-colors">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
-              </button>
+            <!-- User Avatar Pill: "G Guilherme" (Matching Evolua Screenshot User Pill) -->
+            <div class="flex items-center gap-2.5 bg-[#1a1738] border border-surface-700/80 px-3.5 py-1.5 rounded-full text-xs font-bold text-white cursor-pointer hover:border-indigo-500 transition-all" onclick="window.sbApp.navigateTo('settings')">
+              <span class="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center text-white text-[11px] font-black shadow">
+                ${firstInitial}
+              </span>
+              <span>${userName}</span>
             </div>
           ` : `
-            <button onclick="window.sbApp.navigateTo('auth-login')" class="btn-ghost">
+            <button id="nav-login-btn" class="text-xs text-surface-300 hover:text-white font-bold px-3 py-2">
               Entrar
             </button>
-            <button onclick="window.sbApp.navigateTo('auth-register')" class="btn-primary">
+            <button id="nav-register-btn" class="px-4 py-2 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold text-xs shadow-lg">
               Começar Agora
             </button>
           `}
+
+          <!-- Theme Toggle -->
+          <button id="theme-toggle-btn" class="p-2 rounded-xl bg-[#1a1738] border border-surface-700 text-surface-300 hover:text-white transition-all text-xs" title="Alternar Tema Dark/Light">
+            ${state.theme === 'dark' ? '🌙' : '☀️'}
+          </button>
         </div>
       </div>
     `;
@@ -88,6 +74,17 @@ class NavbarComponent {
   }
 
   static bindEvents() {
+    const ctaUpgradeBtn = document.getElementById('nav-cta-upgrade-btn');
+    if (ctaUpgradeBtn) {
+      ctaUpgradeBtn.onclick = () => window.sbApp.navigateTo('referral');
+    }
+
+    const loginBtn = document.getElementById('nav-login-btn');
+    if (loginBtn) loginBtn.onclick = () => window.sbApp.navigateTo('auth-login');
+
+    const registerBtn = document.getElementById('nav-register-btn');
+    if (registerBtn) registerBtn.onclick = () => window.sbApp.navigateTo('auth-register');
+
     const themeBtn = document.getElementById('theme-toggle-btn');
     if (themeBtn) {
       themeBtn.onclick = () => {

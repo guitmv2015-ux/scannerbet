@@ -53,20 +53,33 @@ class EventsService {
     }
   }
 
-  async getLiveEvents(sportKey = 'soccer_brazil_campeonato') {
+  async getLiveEvents(sportKey = 'soccer_brazil_campeonato', forceRefresh = false) {
     const config = window.SCANNERBET_CONFIG.API_CONFIG;
     
     if (!config.configured) {
       return this._generateDemoEvents();
     }
 
+    // Cache System (5 minutes) to protect The Odds API rate limits
+    const cacheKey = `sb_events_cache_${sportKey}`;
+    if (!forceRefresh) {
+        const cachedDataStr = localStorage.getItem(cacheKey);
+        if (cachedDataStr) {
+            try {
+               const cachedData = JSON.parse(cachedDataStr);
+               if (Date.now() - cachedData.timestamp < 5 * 60 * 1000) {
+                   return cachedData.events;
+               }
+            } catch(e) {}
+        }
+    }
+
     try {
-      // We can fetch upcoming events + odds simultaneously using the /odds endpoint for a sport
-      // This is more efficient for The Odds API
-      const oddsData = await this.fetchWithHandling(`${config.baseUrl}/sports/${sportKey}/odds?regions=eu,us&markets=h2h&oddsFormat=decimal`);
+      // FASE 7: Múltiplos Mercados (h2h, spreads, totals)
+      const oddsData = await this.fetchWithHandling(`${config.baseUrl}/sports/${sportKey}/odds?regions=eu,us,uk&markets=h2h,spreads,totals&oddsFormat=decimal`);
       
       // Normalize The Odds API response to ScannerBet Event Model
-      return oddsData.map(match => ({
+      const events = oddsData.map(match => ({
         id: match.id,
         sportKey: match.sport_key,
         sportTitle: match.sport_title,
@@ -76,6 +89,9 @@ class EventsService {
         status: new Date(match.commence_time).getTime() > Date.now() ? 'PRÉ-JOGO' : 'AO VIVO',
         rawBookmakers: match.bookmakers // Pass raw bookmakers down for OddsProviderService to process
       }));
+
+      localStorage.setItem(cacheKey, JSON.stringify({ timestamp: Date.now(), events }));
+      return events;
 
     } catch (error) {
       console.error("Failed to fetch events", error);
