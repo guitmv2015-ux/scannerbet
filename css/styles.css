@@ -1,0 +1,238 @@
+/* SCANNERBET — EVOLUA PAINEL EXACT DESIGN SYSTEM */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;800&display=swap');
+
+:root {
+  /* Exact Evolua Dark Sidebar Colors */
+  --sidebar-bg: #0f0d24;
+  --sidebar-hover: #191638;
+  --sidebar-active: #1d1a45;
+  --sidebar-text: #a5a2c9;
+  --sidebar-text-active: #ffffff;
+  --sidebar-border: #1a1738;
+  
+  /* Canvas & Cards Colors (Exact Evolua Light Mode) */
+  --bg-main: #f8fafc;
+  --bg-navbar: #0f0d24;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f1f5f9;
+  --border-color: #e2e8f0;
+  --text-main: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  
+  /* Brand Gradients matching Reference */
+  --brand-purple: #6366f1;
+  --brand-purple-dark: #4f46e5;
+  --brand-purple-gradient: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%);
+  --brand-cyan-gradient: linear-gradient(90deg, #38bdf8 0%, #3b82f6 100%);
+  
+  --accent-emerald: #10b981;
+  --accent-rose: #ef4444;
+  --accent-amber: #f97316;
+  --accent-cyan: #38bdf8;
+  
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-card: 0 4px 12px 0 rgba(0, 0, 0, 0.03);
+  --shadow-purple: 0 10px 25px -5px rgba(99, 102, 241, 0.4);
+}
+
+.dark {
+  --bg-main: #070614;
+  --bg-card: #121029;
+  --bg-card-hover: #181535;
+  --border-color: rgba(255, 255, 255, 0.08);
+  --text-main: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+  --shadow-card: 0 10px 30px -5px rgba(0, 0, 0, 0.5);
+}
+
+/* Global Reset */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  transition: background-color 0.3s ease, color 0.3s ease;
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4, h5, h6, .font-heading {
+  font-family: 'Outfit', 'Inter', sans-serif;
+}
+
+.font-mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-main);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--brand-purple);
+  border-radius: 9999px;
+}
+
+/* Navbar (Evolua Style Header) */
+#app-navbar {
+  background-color: var(--bg-navbar) !important;
+  border-bottom: 1px solid var(--sidebar-border);
+}
+
+/* Sidebar Specific Styles (Matching Evolua Painel Reference Image) */
+#app-sidebar {
+  background-color: var(--sidebar-bg) !important;
+  color: var(--sidebar-text);
+  border-right: 1px solid var(--sidebar-border);
+}
+
+.sidebar-group-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #726e9c;
+  padding: 10px 12px 4px 12px;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sidebar-text);
+  transition: all 0.2s ease;
+  width: 100%;
+  text-align: left;
+}
+
+.sidebar-link:hover {
+  background-color: var(--sidebar-hover);
+  color: var(--sidebar-text-active);
+}
+
+.sidebar-link.active {
+  background-color: var(--sidebar-active);
+  color: #ffffff;
+  font-weight: 700;
+}
+
+/* Badges for Sidebar Links (Matching Evolua Badges in Reference Image) */
+.badge-sidebar-warn {
+  background: rgba(249, 115, 22, 0.2);
+  color: #f97316;
+  border: 1px solid rgba(249, 115, 22, 0.4);
+  font-size: 9px;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 6px;
+}
+
+.badge-sidebar-bonus {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  font-size: 9px;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 6px;
+}
+
+/* Evolua Cards & Container Styling */
+.evolua-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  box-shadow: var(--shadow-card);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.evolua-card:hover {
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.06);
+}
+
+/* Buttons */
+.btn-evolua-purple {
+  background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%);
+  color: #ffffff;
+  font-weight: 700;
+  border-radius: 12px;
+  box-shadow: var(--shadow-purple);
+  transition: all 0.2s ease;
+}
+
+.btn-evolua-purple:hover {
+  opacity: 0.95;
+  transform: translateY(-1px);
+}
+
+.btn-evolua-cyan {
+  background: linear-gradient(90deg, #38bdf8 0%, #3b82f6 100%);
+  color: #ffffff;
+  font-weight: 700;
+  border-radius: 9999px;
+  box-shadow: 0 4px 15px rgba(56, 189, 248, 0.35);
+  transition: all 0.2s ease;
+}
+
+.btn-evolua-cyan:hover {
+  opacity: 0.95;
+  transform: translateY(-1px);
+}
+
+/* Odds Badge Highlights for ScannerBet */
+.best-odd {
+  border: 2px solid #10b981 !important;
+  background: rgba(16, 185, 129, 0.15) !important;
+  color: #10b981 !important;
+  font-weight: 800 !important;
+  position: relative;
+}
+
+.best-odd::after {
+  content: 'TOP ODD';
+  position: absolute;
+  top: -8px;
+  right: -4px;
+  font-size: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  background: #10b981;
+  color: #000;
+  padding: 1px 4px;
+  border-radius: 4px;
+  font-weight: 900;
+}
+
+/* Scanner Score Gauge Circle */
+.score-circle {
+  position: relative;
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-card);
+  box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.15);
+}
+
+/* Floating AI Chat Assistant Widget (Evolua Chat Purple Circle Widget) */
+#toggle-ai-assistant-btn {
+  background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%) !important;
+  box-shadow: 0 10px 30px rgba(124, 58, 237, 0.5) !important;
+  border: 2px solid rgba(255, 255, 255, 0.2) !important;
+}
