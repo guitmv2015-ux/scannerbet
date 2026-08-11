@@ -60,17 +60,63 @@ class OddsProviderService {
       });
     });
 
-    // Step 2: Convert Maps to Arrays and calculate Best Odds
+    // Step 2: Convert Maps to Arrays and calculate Stats
+    window._oddsHistory = window._oddsHistory || {};
+
     for (const [mktKey, mktVal] of marketMap.entries()) {
       const selectionsArray = Array.from(mktVal.selections.values()).map(sel => {
-        // Find Best Odd
+        // Calculate Stats
         const bestOddObj = this.identifyBestOdd(sel.odds);
+        let lowestOdd = null;
+        let sum = 0;
+        let sumSquaredDiffs = 0;
+        
+        sel.odds.forEach(o => {
+            const val = parseFloat(o.odd);
+            
+            // HISTORY TRACKING
+            const histKey = `${event.id}_${mktKey}_${sel.fullName}_${o.bookmakerKey}`;
+            const lastVal = window._oddsHistory[histKey];
+            o.trend = 0; // 0 = same, 1 = up, -1 = down
+            if (lastVal && lastVal !== val) {
+                o.trend = val > lastVal ? 1 : -1;
+            }
+            window._oddsHistory[histKey] = val;
+            
+            // MATH
+            o.impliedProb = (1 / val) * 100;
+            
+            if (lowestOdd === null || val < lowestOdd) lowestOdd = val;
+            sum += val;
+        });
+
+        const numOdds = sel.odds.length;
+        const avgOdd = numOdds > 0 ? (sum / numOdds) : 0;
+        const diff = bestOddObj && avgOdd > 0 ? ((parseFloat(bestOddObj.odd) - avgOdd) / avgOdd) * 100 : 0;
+
+        // Dispersion (Standard Deviation)
+        if (numOdds > 1) {
+            sel.odds.forEach(o => {
+                sumSquaredDiffs += Math.pow(parseFloat(o.odd) - avgOdd, 2);
+            });
+            sel.dispersion = Math.sqrt(sumSquaredDiffs / numOdds);
+        } else {
+            sel.dispersion = 0;
+        }
+
         return {
           name: sel.name,
           fullName: sel.fullName,
           line: sel.line,
           bestOdd: bestOddObj,
-          allOdds: sel.odds
+          allOdds: sel.odds.sort((a,b) => parseFloat(b.odd) - parseFloat(a.odd)), // sort odds descending
+          stats: {
+              lowestOdd: lowestOdd,
+              averageOdd: avgOdd,
+              diff: diff,
+              dispersion: sel.dispersion,
+              numBookmakers: numOdds
+          }
         };
       });
 

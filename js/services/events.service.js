@@ -117,7 +117,16 @@ class EventsService {
     if (sportKeys.length === 0) {
        try {
            const active = await this.getActiveSports();
-           sportKeys = active.slice(0, 3).map(s => s.key);
+           
+           // Remover esportes Outrights (Mercados de Longo Prazo) que causam Erro 422 ao pedir spreads/totals
+           const validSports = active.filter(s => !s.hasOutrights && !s.key.includes('_winner') && !s.key.includes('_outrights'));
+           
+           // Priorizar Futebol Brasileiro
+           const brazilSports = validSports.filter(s => s.key.includes('soccer_brazil'));
+           const otherSports = validSports.filter(s => !s.key.includes('soccer_brazil'));
+           
+           // Selecionar os primeiros 5 campeonatos (priorizando Brasil)
+           sportKeys = [...brazilSports, ...otherSports].slice(0, 5).map(s => s.key);
        } catch(e) {
            sportKeys = this.userPreferences.sports;
        }
