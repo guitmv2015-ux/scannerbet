@@ -109,7 +109,7 @@ class DashboardView {
           } else {
              const groupObj = this.sportsGroups.find(g => g.id === this.currentFilterSportGroup);
              if (groupObj) {
-                 keysToFetch = groupObj.keys.slice(0, 5).map(s => s.key);
+                 keysToFetch = groupObj.keys.map(s => s.key);
              }
           }
 
@@ -136,17 +136,20 @@ class DashboardView {
   static setSportGroup(groupId) {
       this.currentFilterSportGroup = groupId;
       this.currentFilterSportKey = 'all'; 
+      this.displayedEventsLimit = 12;
       this.loadEventsForCurrentGroup();
   }
 
   static setSportKey(key) {
       this.currentFilterSportKey = key;
+      this.displayedEventsLimit = 12;
       this.loadEventsForCurrentGroup();
   }
 
   static setFilter(type, val) {
       if (type === 'date') this.currentFilterDate = val;
       if (type === 'status') this.currentFilterStatus = val;
+      this.displayedEventsLimit = 12;
       this.renderContent(document.getElementById('app-main'));
   }
 
@@ -254,7 +257,18 @@ class DashboardView {
        
        let oddsHtml = '';
        const oddsData = window.OddsProviderService.getNormalizedOddsForEvent(evt);
+       let totalBookies = 0;
+       let totalMarkets = oddsData ? oddsData.length : 0;
+       
        if (oddsData && oddsData.length > 0) {
+           const allBookiesSet = new Set();
+           oddsData.forEach(m => {
+               if(m.selections) m.selections.forEach(s => {
+                   if(s.allOdds) s.allOdds.forEach(o => allBookiesSet.add(o.bookmakerKey));
+               });
+           });
+           totalBookies = allBookiesSet.size;
+           
            const mktMain = oddsData.find(m => m.id === 'h2h') || oddsData[0];
            if (mktMain && mktMain.selections.length > 0) {
                oddsHtml = `<div class="flex gap-2 w-full">`;
@@ -283,10 +297,15 @@ class DashboardView {
              </div>
           </div>
           
-          <div class="pl-2 mb-5 flex-1 flex flex-col justify-center">
+          <div class="pl-2 mb-4 flex-1 flex flex-col justify-center">
              <h3 class="text-xl font-black text-white leading-tight mb-1">${evt.homeTeam}</h3>
              <p class="text-xs font-bold text-[#737373] italic mb-1 px-1 w-fit rounded">vs</p>
              <h3 class="text-xl font-black text-white leading-tight">${evt.awayTeam}</h3>
+          </div>
+          
+          <div class="pl-2 mb-3 flex gap-4 text-[9px] uppercase tracking-widest text-[#737373] font-black">
+             <span>${totalBookies} CASAS</span>
+             <span>${totalMarkets} MERCADOS</span>
           </div>
 
           <div class="pl-2 mt-auto pt-4 border-t border-[#333]">
@@ -316,6 +335,9 @@ class DashboardView {
     } else if (this.currentFilterDate === '3days') {
        const d3 = new Date(endOfToday); d3.setDate(d3.getDate()+3);
        filteredEvents = filteredEvents.filter(e => e.startTime <= d3.getTime());
+    } else if (this.currentFilterDate === '7days') {
+       const d7 = new Date(endOfToday); d7.setDate(d7.getDate()+7);
+       filteredEvents = filteredEvents.filter(e => e.startTime <= d7.getTime());
     }
     
     if (this.currentFilterStatus === 'live') {
@@ -358,6 +380,15 @@ class DashboardView {
        const current = type === 'date' ? this.currentFilterDate : this.currentFilterStatus;
        const isActive = current === val;
        return `<button onclick="window.DashboardView.setFilter('${type}', '${val}')" class="px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${isActive ? 'bg-[#06b6d4] text-black shadow-[0_0_15px_rgba(6,182,212,0.4)]' : 'bg-[#141414] border border-[#262626] text-[#a3a3a3] hover:text-white hover:border-[#404040] whitespace-nowrap'}">${label}</button>`;
+    };
+
+    this.displayedEventsLimit = this.displayedEventsLimit || 12;
+    const paginatedEvents = filteredEvents.slice(0, this.displayedEventsLimit);
+    const hasMoreEvents = filteredEvents.length > this.displayedEventsLimit;
+
+    window.DashboardView.loadMoreEvents = () => {
+        this.displayedEventsLimit += 12;
+        this.renderContent(document.getElementById('app-main'));
     };
 
     main.innerHTML = `
@@ -445,16 +476,24 @@ class DashboardView {
               ${renderFilterBtn('status', 'live', 'Ao Vivo')}
               ${renderFilterBtn('date', 'today', 'Hoje')}
               ${renderFilterBtn('date', 'tomorrow', 'Amanhã')}
-              ${renderFilterBtn('date', '3days', 'Próximos Jogos')}
+              ${renderFilterBtn('date', '3days', 'Próximos 3 Dias')}
+              ${renderFilterBtn('date', '7days', 'Próximos 7 Dias')}
            </div>
         </div>
 
         <!-- LISTAGEM PRINCIPAL -->
         <div class="space-y-6">
-           ${filteredEvents.length > 0 ? `
+           ${paginatedEvents.length > 0 ? `
            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              ${filteredEvents.map(e => this.renderEventCard(e)).join('')}
+              ${paginatedEvents.map(e => this.renderEventCard(e)).join('')}
            </div>
+           ${hasMoreEvents ? `
+           <div class="flex justify-center mt-6">
+               <button onclick="window.DashboardView.loadMoreEvents()" class="bg-[#1a1a1a] hover:bg-[#262626] border border-[#333] hover:border-[#06b6d4] text-white px-8 py-3 rounded-xl text-[10px] uppercase font-black tracking-widest transition-all shadow-md">
+                   Carregar Mais Eventos (${filteredEvents.length - this.displayedEventsLimit} restantes)
+               </button>
+           </div>
+           ` : ''}
            ` : `
            <div class="bg-[#0f0f0f] border border-[#262626] rounded-xl p-12 text-center flex flex-col items-center justify-center">
                <svg class="w-16 h-16 text-[#333] mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>

@@ -86,8 +86,8 @@ class EventsService {
       if (!config.configured) {
           throw new Error("API Not configured");
       }
-      // FASE 7: Múltiplos Mercados (h2h, spreads, totals)
-      const oddsData = await this.fetchWithHandling(`${config.baseUrl}/sports/${sportKey}/odds?regions=eu,us,uk,au&markets=h2h,spreads,totals&oddsFormat=decimal`);
+      // FASE 9: Expansão Massiva de Mercados (h2h, spreads, totals, outrights, btts)
+      const oddsData = await this.fetchWithHandling(`${config.baseUrl}/sports/${sportKey}/odds?regions=eu,us,uk,au&markets=h2h,spreads,totals,outrights,btts&oddsFormat=decimal`);
       
       // Normalize The Odds API response to ScannerBet Event Model
       const events = oddsData.map(match => ({
@@ -125,8 +125,8 @@ class EventsService {
            const brazilSports = validSports.filter(s => s.key.includes('soccer_brazil'));
            const otherSports = validSports.filter(s => !s.key.includes('soccer_brazil'));
            
-           // Selecionar os primeiros 5 campeonatos (priorizando Brasil)
-           sportKeys = [...brazilSports, ...otherSports].slice(0, 5).map(s => s.key);
+           // Selecionar os primeiros 25 campeonatos (priorizando Brasil)
+           sportKeys = [...brazilSports, ...otherSports].slice(0, 25).map(s => s.key);
        } catch(e) {
            sportKeys = this.userPreferences.sports;
        }

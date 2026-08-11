@@ -178,123 +178,162 @@ class ScannerView {
           return `<button onclick="window.ScannerView.scSetFilter('sort', '${val}')" class="px-4 py-3 w-full rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${isActive ? 'bg-[#06b6d4]/10 border border-[#06b6d4]/30 text-[#06b6d4]' : 'bg-[#141414] border border-[#262626] text-[#a3a3a3] hover:bg-[#1a1a1a]'}">${icon} ${label}</button>`;
       };
 
-      main.innerHTML = `
-        <div class="flex-1 w-full p-4 lg:p-6 flex flex-col relative animate-in fade-in duration-500 max-w-[1600px] mx-auto pb-12">
+      const topHtml = `
+        <div class="flex-1 w-full p-4 lg:p-6 flex flex-col animate-in fade-in duration-500 max-w-[1400px] mx-auto pb-12">
             
-            <div class="text-center mb-8">
-               <h1 class="text-3xl md:text-5xl font-black text-white tracking-tight flex items-center justify-center gap-3 mb-2">
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="3"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                  CENTRAL DE PESQUISA
-               </h1>
-               <p class="text-[#a3a3a3] text-sm uppercase tracking-widest font-bold">Encontre o evento perfeito para escanear</p>
+            <div class="text-center mb-10">
+               <h1 class="text-3xl md:text-4xl font-black text-white tracking-tight mb-2">SCANNER DE ODDS</h1>
+               <p class="text-[#a3a3a3] text-sm uppercase tracking-widest font-bold">Encontre eventos e compare cotações</p>
             </div>
 
-            <!-- BUSCA GLOBAL DO SCANNER -->
-            <div class="max-w-3xl mx-auto w-full relative z-50 mb-8">
-                <input type="text" id="sc-global-search" placeholder="🔎 Digite time, campeonato ou evento..."
-                       value="${this.scSearchQuery}"
-                       class="w-full bg-[#0a0a0a] border-2 border-[#333] hover:border-[#404040] text-white text-lg rounded-2xl pl-14 pr-6 py-4 focus:border-[#06b6d4] focus:ring-4 focus:ring-[#06b6d4]/20 focus:outline-none transition-all shadow-inner"
-                       onkeyup="window.ScannerView.scHandleSearch(event)">
-                <svg class="absolute left-5 top-4.5 text-[#06b6d4]" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <!-- BARRA DE PESQUISA PROFISSIONAL -->
+            <div class="max-w-2xl mx-auto w-full mb-10">
+                <div class="relative flex items-center w-full group">
+                    <svg class="absolute left-4 w-5 h-5 text-[#737373] group-focus-within:text-[#06b6d4] transition-colors pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <input type="text" id="sc-global-search" 
+                           placeholder="Buscar partida, time, campeonato ou evento..."
+                           value="${this.scSearchQuery}"
+                           class="w-full bg-[#0a0a0a] border border-[#262626] hover:border-[#404040] text-white text-sm md:text-base rounded-xl pl-12 pr-12 py-3.5 focus:border-[#06b6d4] focus:ring-1 focus:ring-[#06b6d4] focus:outline-none transition-all shadow-lg"
+                           onkeyup="window.ScannerView.scHandleSearch(event)">
+                    ${this.scSearchQuery ? `<button onclick="window.ScannerView.scClearSearch()" class="absolute right-4 text-[#737373] hover:text-white transition-colors" title="Limpar pesquisa"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>` : ''}
+                </div>
             </div>
+      `;
 
+      const bottomHtml = `
             <!-- FILTROS AVANÇADOS -->
-            <div class="bg-[#0a0a0a] border border-[#262626] rounded-2xl p-5 mb-8 shadow-lg space-y-4">
-                <div class="flex flex-wrap items-center gap-4">
-                   <div class="flex items-center gap-3 w-full lg:w-auto overflow-x-auto custom-scrollbar pb-1">
-                      <span class="text-[9px] text-[#737373] uppercase font-black tracking-widest min-w-max"><svg class="inline mr-1" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg> Esporte / Liga:</span>
+            <div class="bg-gradient-to-r from-[#0f0f0f] to-[#0a0a0a] border border-[#262626] rounded-2xl p-6 mb-8 shadow-md flex flex-col gap-5">
+                <div class="flex flex-col md:flex-row md:items-center gap-4">
+                   <span class="text-[10px] text-[#737373] uppercase font-black tracking-widest min-w-[100px]">Esporte / Liga</span>
+                   <div class="flex flex-wrap items-center gap-2 w-full">
                       ${renderFilter('sport', 'all', 'Todos', this.scFilterSport)}
                       ${sportsAvailable.map(sp => renderFilter('sport', sp, sp, this.scFilterSport)).join('')}
                    </div>
                 </div>
-                <div class="flex flex-wrap items-center gap-4 border-t border-[#1a1a1a] pt-4">
-                   <div class="flex items-center gap-3 w-full lg:w-auto overflow-x-auto custom-scrollbar pb-1">
-                      <span class="text-[9px] text-[#737373] uppercase font-black tracking-widest min-w-max"><svg class="inline mr-1" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg> Data:</span>
+                
+                <div class="w-full h-px bg-[#1a1a1a]"></div>
+                
+                <div class="flex flex-col md:flex-row md:items-center gap-4">
+                   <span class="text-[10px] text-[#737373] uppercase font-black tracking-widest min-w-[100px]">Data</span>
+                   <div class="flex flex-wrap items-center gap-2 w-full">
                       ${renderFilter('date', 'all', 'Todos', this.scFilterDate)}
                       ${renderFilter('date', 'today', 'Hoje', this.scFilterDate)}
                       ${renderFilter('date', 'tomorrow', 'Amanhã', this.scFilterDate)}
-                      ${renderFilter('date', '3days', 'Próx 3 Dias', this.scFilterDate)}
-                      ${renderFilter('date', '7days', 'Próx 7 Dias', this.scFilterDate)}
+                      ${renderFilter('date', '3days', 'Próx. 3 dias', this.scFilterDate)}
+                      ${renderFilter('date', '7days', 'Próx. 7 dias', this.scFilterDate)}
                    </div>
-                   <div class="w-px h-6 bg-[#262626] hidden lg:block"></div>
-                   <div class="flex items-center gap-3 w-full lg:w-auto overflow-x-auto custom-scrollbar pb-1">
-                      <span class="text-[9px] text-[#737373] uppercase font-black tracking-widest min-w-max"><svg class="inline mr-1" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> Status:</span>
+                </div>
+
+                <div class="w-full h-px bg-[#1a1a1a]"></div>
+
+                <div class="flex flex-col md:flex-row md:items-center gap-4">
+                   <span class="text-[10px] text-[#737373] uppercase font-black tracking-widest min-w-[100px]">Status</span>
+                   <div class="flex flex-wrap items-center gap-2 w-full">
                       ${renderFilter('status', 'all', 'Todos', this.scFilterStatus)}
-                      ${renderFilter('status', 'live', 'Ao Vivo', this.scFilterStatus)}
-                      ${renderFilter('status', 'pre', 'Pré-Jogo', this.scFilterStatus)}
+                      ${renderFilter('status', 'live', 'Ao vivo', this.scFilterStatus)}
+                      ${renderFilter('status', 'pre', 'Pré-jogo', this.scFilterStatus)}
                    </div>
                 </div>
             </div>
 
-            <!-- ORDENAÇÃO E RESUMO -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <!-- ORDENAÇÃO -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                 ${renderSort('best_odd', '⭐ Melhores Cotações', '')}
-                ${renderSort('most_bookies', '🏦 Mais Casas', '')}
+                ${renderSort('most_bookies', '🏢 Mais Casas', '')}
                 ${renderSort('most_markets', '📊 Mais Mercados', '')}
             </div>
             
-            <div class="flex justify-between items-center mb-4 pl-2">
-                <span class="text-xs font-black text-[#a3a3a3] uppercase tracking-widest">${results.length} Eventos Encontrados</span>
-                <span class="text-[9px] bg-[#1a1a1a] border border-[#333] px-2 py-1 rounded text-[#737373] uppercase tracking-widest">Base de Dados: The Odds API</span>
+            <div class="mb-4 pl-1">
+                <span class="text-[11px] font-black text-[#a3a3a3] uppercase tracking-widest">${results.length} EVENTOS ENCONTRADOS</span>
             </div>
 
-            <!-- LISTAGEM DE EVENTOS PARA ESCANEAR -->
+            <!-- LISTAGEM DE EVENTOS -->
             <div class="space-y-4">
                 ${results.length === 0 ? `
-                   <div class="bg-[#0a0a0a] border border-dashed border-[#333] rounded-2xl p-12 text-center shadow-lg">
-                      <p class="text-[#737373] text-sm uppercase tracking-widest font-black">Não existem eventos disponíveis para os filtros selecionados.</p>
+                   <div class="bg-[#0a0a0a] border border-[#262626] rounded-2xl p-16 text-center flex flex-col items-center justify-center shadow-md">
+                      <svg class="w-12 h-12 text-[#333] mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                      <h3 class="text-lg font-black text-white mb-2">Nenhum evento encontrado</h3>
+                      <p class="text-sm text-[#737373] mb-6 max-w-md">Não encontramos partidas correspondentes à sua pesquisa. Tente buscar por outro time, campeonato ou esporte.</p>
+                      <button onclick="window.ScannerView.scClearSearch()" class="px-6 py-2.5 bg-[#1a1a1a] hover:bg-[#262626] border border-[#333] text-white text-xs font-black uppercase tracking-widest rounded-lg transition-colors">Limpar Pesquisa e Filtros</button>
                    </div>
                 ` : results.map(evt => {
                    const dateStr = window.DateUtil ? window.DateUtil.formatEventDate(evt.startTime) : new Date(evt.startTime).toLocaleString('pt-BR');
                    const isLive = evt.status === 'AO VIVO';
                    
                    return `
-                   <div class="bg-gradient-to-r from-[#0f0f0f] to-[#141414] border border-[#262626] hover:border-[#06b6d4]/50 rounded-2xl p-6 transition-colors shadow-lg group relative overflow-hidden flex flex-col md:flex-row justify-between md:items-center gap-6">
-                       ${isLive ? '<div class="absolute top-0 left-0 w-1 h-full bg-red-500"></div>' : '<div class="absolute top-0 left-0 w-1 h-full bg-[#06b6d4]"></div>'}
+                   <div class="bg-[#0f0f0f] border border-[#262626] hover:border-[#404040] rounded-xl p-5 md:p-6 transition-colors group relative flex flex-col md:flex-row justify-between md:items-center gap-6">
+                       ${isLive ? '<div class="absolute top-0 left-0 w-1 h-full bg-red-500 rounded-l-xl"></div>' : ''}
                        
-                       <div class="flex-1 pl-3">
-                           <div class="flex flex-wrap items-center gap-2 mb-3">
-                              <span class="text-[9px] bg-[#1a1a1a] text-[#06b6d4] border border-[#333] px-2 py-0.5 rounded font-black uppercase tracking-widest">${evt.sportTitle}</span>
-                              ${isLive ? '<span class="text-[9px] bg-red-500/20 text-red-500 border border-red-500/30 px-2 py-0.5 rounded font-black uppercase tracking-widest animate-pulse">AO VIVO</span>' : ''}
-                              <span class="text-[10px] text-[#737373] font-mono group-hover:text-white transition-colors">${dateStr}</span>
+                       <div class="flex-1 ${isLive ? 'pl-2' : ''}">
+                           <div class="mb-1">
+                              <span class="text-[10px] text-[#06b6d4] font-black uppercase tracking-widest">${evt.sportTitle}</span>
                            </div>
-                           <h3 class="text-xl font-black text-white leading-tight">${evt.homeTeam} <span class="text-[#404040] mx-2 font-light">vs</span> ${evt.awayTeam}</h3>
+                           <h3 class="text-xl md:text-2xl font-black text-white leading-tight mb-2">${evt.homeTeam} <span class="text-[#404040] mx-1 font-light text-lg">vs</span> ${evt.awayTeam}</h3>
+                           <div class="flex items-center gap-2">
+                              ${isLive ? '<span class="text-[9px] bg-red-500 text-white px-1.5 py-0.5 rounded font-black uppercase tracking-widest animate-pulse">AO VIVO</span>' : ''}
+                              <span class="text-xs text-[#737373] font-mono group-hover:text-[#a3a3a3] transition-colors">${dateStr}</span>
+                           </div>
                        </div>
 
-                       <div class="flex items-center gap-4 bg-[#0a0a0a] p-4 rounded-xl border border-[#1a1a1a]">
-                           <div class="text-center border-r border-[#262626] pr-4">
-                              <p class="text-[9px] text-[#737373] uppercase tracking-widest font-black mb-1">Casas</p>
-                              <p class="text-xl font-black text-white font-mono">${evt._numBookies || 0}</p>
+                       <div class="flex flex-wrap md:flex-nowrap items-center gap-6 bg-[#0a0a0a] py-3 px-5 rounded-lg border border-[#1a1a1a]">
+                           <div class="text-center">
+                              <p class="text-[9px] text-[#737373] uppercase tracking-widest font-black mb-0.5">Casas</p>
+                              <p class="text-lg font-black text-white font-mono">${evt._numBookies || 0}</p>
                            </div>
-                           <div class="text-center border-r border-[#262626] pr-4">
-                              <p class="text-[9px] text-[#737373] uppercase tracking-widest font-black mb-1">Mercados</p>
-                              <p class="text-xl font-black text-white font-mono">${evt._numMarkets || 0}</p>
+                           <div class="w-px h-8 bg-[#1a1a1a]"></div>
+                           <div class="text-center">
+                              <p class="text-[9px] text-[#737373] uppercase tracking-widest font-black mb-0.5">Mercados</p>
+                              <p class="text-lg font-black text-white font-mono">${evt._numMarkets || 0}</p>
                            </div>
+                           <div class="w-px h-8 bg-[#1a1a1a]"></div>
                            <div class="text-center min-w-[70px]">
-                              <p class="text-[9px] text-[#737373] uppercase tracking-widest font-black mb-1 flex items-center justify-center gap-1">⭐ Melhor Odd</p>
-                              <p class="text-xl font-black text-[#a3e635] font-mono leading-none">${evt._bestOdd > 0 ? '@'+parseFloat(evt._bestOdd).toFixed(2) : '-'}</p>
+                              <p class="text-[9px] text-[#737373] uppercase tracking-widest font-black mb-0.5">Melhor Odd</p>
+                              <p class="text-lg font-black text-[#a3e635] font-mono leading-none">${evt._bestOdd > 0 ? '@'+parseFloat(evt._bestOdd).toFixed(2) : '-'}</p>
                            </div>
                        </div>
 
-                       <div>
-                           <button onclick="window.sbApp.navigateTo('scanner', { sportKey: '${evt.sportKey}', eventId: '${evt.id}' })" class="w-full md:w-auto bg-[#1a1a1a] hover:bg-[#06b6d4] text-[#06b6d4] hover:text-black border border-[#333] hover:border-[#06b6d4] px-6 py-4 rounded-xl font-black text-[11px] uppercase tracking-widest transition-all whitespace-nowrap shadow-lg">
-                              [ Analisar Odds ]
+                       <div class="w-full md:w-auto mt-2 md:mt-0">
+                           <button onclick="window.sbApp.navigateTo('scanner', { sportKey: '${evt.sportKey}', eventId: '${evt.id}' })" class="w-full md:w-auto bg-[#06b6d4]/10 hover:bg-[#06b6d4] text-[#06b6d4] hover:text-black border border-[#06b6d4]/30 hover:border-[#06b6d4] px-6 py-3.5 rounded-lg font-black text-[10px] uppercase tracking-widest transition-all whitespace-nowrap shadow-sm">
+                              Analisar Odds
                            </button>
                        </div>
                    </div>
                    `;
                 }).join('')}
             </div>
-        </div>
       `;
+
+      if (this.scIsDynamicUpdate) {
+          const dynamicContainer = document.getElementById('sc-dynamic-content');
+          if (dynamicContainer) {
+              dynamicContainer.innerHTML = bottomHtml;
+              this.scIsDynamicUpdate = false;
+              return;
+          }
+      }
+
+      main.innerHTML = topHtml + '<div id="sc-dynamic-content" class="w-full">' + bottomHtml + '</div></div>';
   }
 
   static scHandleSearch(e) {
       this.scSearchQuery = e.target.value;
       if (this.scTimeout) clearTimeout(this.scTimeout);
       this.scTimeout = setTimeout(() => {
+          this.scIsDynamicUpdate = true;
           this.renderSearchCentral(document.getElementById('app-main'));
       }, 300);
+  }
+
+  static scClearSearch() {
+      this.scSearchQuery = '';
+      this.scFilterSport = 'all';
+      this.scFilterLeague = 'all';
+      this.scFilterDate = 'all';
+      this.scFilterStatus = 'all';
+      this.scFilterSort = 'best_odd';
+      const input = document.getElementById('sc-global-search');
+      if (input) input.value = '';
+      this.renderSearchCentral(document.getElementById('app-main'));
   }
 
   static scSetFilter(type, val) {
