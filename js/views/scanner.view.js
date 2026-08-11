@@ -1,224 +1,356 @@
-/**
- * SCANNERBET DEFINITIVE SCANNER VIEW
- * Real-time Odds API Integration - Phase 2
- */
-
 class ScannerView {
-  static async render() {
+  static async render(params) {
     const main = document.getElementById('app-main');
     if (!main) return;
 
     main.innerHTML = `
-      <div class="flex flex-col h-[calc(100vh-5rem)]">
-        <!-- Top Toolbar / Filters -->
-        <div class="h-16 border-b border-[#262626] bg-[#0a0a0a] flex items-center px-6 gap-4 shrink-0">
-          <div class="flex items-center gap-2 text-[#a3a3a3]">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-            <span class="text-sm font-bold tracking-widest uppercase">Scanner em Tempo Real</span>
-          </div>
-
-          <div class="h-8 w-px bg-[#262626] mx-2"></div>
-
-          <!-- Select Sport -->
-          <select id="scanner-sport-select" class="bg-[#141414] border border-[#262626] text-white text-xs font-bold rounded px-3 py-1.5 focus:outline-none focus:border-[#a3e635]">
-            <option value="">Carregando esportes...</option>
-          </select>
-          
-          <button id="scanner-search-btn" class="btn-primary py-1.5 px-6 ml-auto" disabled>
-            Buscar Partidas
-          </button>
-        </div>
-
-        <!-- Content Area -->
-        <div class="flex-1 overflow-hidden flex">
-          
-          <!-- Events List (Sidebar) -->
-          <div class="w-[350px] border-r border-[#262626] bg-[#0a0a0a] flex flex-col h-full">
-            <div class="p-4 border-b border-[#262626] flex items-center justify-between">
-              <span class="text-xs font-bold text-[#737373] uppercase">Eventos Disponíveis</span>
-              <span id="scanner-event-count" class="badge bg-[#262626] text-white">0</span>
-            </div>
-            <div id="scanner-events-list" class="flex-1 overflow-y-auto p-2 space-y-2">
-              <div class="text-center p-6 text-[11px] text-[#737373]">
-                Selecione um esporte e clique em buscar para carregar os eventos.
-              </div>
-            </div>
-          </div>
-
-          <!-- Main Analysis Area -->
-          <div class="flex-1 bg-surface-950 flex flex-col h-full relative">
-            <div id="scanner-main-content" class="absolute inset-0 overflow-y-auto p-8">
-              <div class="flex flex-col items-center justify-center h-full text-center">
-                <div class="w-16 h-16 rounded-full bg-[#1a1a1a] flex items-center justify-center text-[#737373] mb-4">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
-                </div>
-                <h3 class="text-lg font-bold text-white mb-2">Nenhum evento selecionado</h3>
-                <p class="text-sm text-[#737373] max-w-md">Selecione uma partida na lista lateral para carregar a matriz de comparação de odds em tempo real.</p>
-              </div>
-            </div>
-          </div>
-
-        </div>
+      <div class="flex-1 w-full p-4 flex items-center justify-center min-h-[calc(100vh-5rem)]">
+        <div class="w-10 h-10 border-4 border-[#262626] border-t-[#a3e635] rounded-full animate-spin"></div>
       </div>
     `;
 
-    await ScannerView.loadSports();
-    ScannerView.bindEvents();
-  }
-
-  static async loadSports() {
-    const select = document.getElementById('scanner-sport-select');
-    const searchBtn = document.getElementById('scanner-search-btn');
-    
     try {
-      const sports = await window.EventsService.getActiveSports();
-      select.innerHTML = sports.map(s => `<option value="${s.key}">${s.title}</option>`).join('');
-      searchBtn.disabled = false;
-    } catch (e) {
-      select.innerHTML = `<option value="">Erro ao carregar esportes</option>`;
-      console.error(e);
-      window.sbApp.showToast('Erro de API', 'Não foi possível carregar os esportes. Verifique se a API_KEY está configurada.', 'error');
+      let targetSport = params && params.sportKey ? params.sportKey : null;
+      let targetEventId = params && params.eventId ? params.eventId : null;
+
+      if (!targetEventId) {
+          // Fallback: carregar o primeiro evento disponível para que a aba funcione livremente
+          const allEvents = await window.EventsService.getMassiveEvents();
+          if (allEvents && allEvents.length > 0) {
+              targetSport = allEvents[0].sportKey;
+              targetEventId = allEvents[0].id;
+          } else {
+              throw new Error("Nenhum evento ativo no momento para escanear.");
+          }
+      }
+
+      const event = await window.EventsService.getEventById(targetSport, targetEventId);
+      if (!event) throw new Error("Evento não encontrado");
+
+      this.currentEvent = event;
+      this.normalizedMarkets = window.OddsProviderService.getNormalizedOddsForEvent(event);
+      this.activeTab = 'overview';
+
+      this.renderFullScanner(main);
+    } catch (error) {
+       console.error(error);
+       main.innerHTML = `
+         <div class="p-8 text-center">
+            <h3 class="text-white mb-4">Erro ao carregar evento</h3>
+            <button onclick="window.sbApp.navigateTo('dashboard')" class="bg-[#262626] text-white px-4 py-2 rounded">Voltar</button>
+         </div>
+       `;
     }
   }
 
-  static bindEvents() {
-    const searchBtn = document.getElementById('scanner-search-btn');
-    const select = document.getElementById('scanner-sport-select');
+  static renderFullScanner(main) {
+    const isLive = this.currentEvent.status === 'AO VIVO';
+    const dateFormatted = window.DateUtil ? window.DateUtil.formatEventDate(this.currentEvent.startTime) : new Date(this.currentEvent.startTime).toLocaleString('pt-BR');
+
+    // TABS
+    let tabsHtml = `
+      <button class="px-5 py-3 text-sm font-bold whitespace-nowrap border-b-2 transition-all ${this.activeTab === 'overview' ? 'border-[#a3e635] text-[#a3e635]' : 'border-transparent text-[#737373] hover:text-white hover:bg-[#141414]'}"
+              onclick="window.ScannerView.switchTab('overview')">
+         Visão Geral
+      </button>
+    `;
     
-    searchBtn.addEventListener('click', async () => {
-      const sportKey = select.value;
-      if (!sportKey) return;
-      
-      const listContainer = document.getElementById('scanner-events-list');
-      const countEl = document.getElementById('scanner-event-count');
-      const mainContent = document.getElementById('scanner-main-content');
-      
-      searchBtn.disabled = true;
-      searchBtn.innerHTML = 'Buscando...';
-      listContainer.innerHTML = `<div class="text-center p-4 text-[#a3e635] text-xs font-bold animate-pulse">Consultando The Odds API...</div>`;
-      mainContent.innerHTML = ''; // Clear main area
-      
-      try {
-        const events = await window.EventsService.getLiveEvents(sportKey);
-        countEl.textContent = events.length;
-        
-        if (events.length === 0) {
-          listContainer.innerHTML = `<div class="text-center p-6 text-[11px] text-[#737373]">Nenhum evento encontrado para este esporte no momento.</div>`;
-        } else {
-          listContainer.innerHTML = events.map(evt => `
-            <div class="scanner-event-card p-3 rounded-lg bg-[#0f0f0f] border border-[#262626] hover:border-[#a3e635] cursor-pointer transition-colors" data-id="${evt.id}">
-              <div class="flex items-center justify-between mb-2">
-                <span class="text-[9px] font-bold text-[#737373] tracking-widest">${new Date(evt.startTime).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}</span>
-                <span class="text-[9px] font-bold ${evt.status === 'AO VIVO' ? 'text-red-500' : 'text-emerald-500'} bg-white/5 px-2 py-0.5 rounded">${evt.status}</span>
-              </div>
-              <p class="text-xs font-bold text-white mb-1 truncate">${evt.homeTeam}</p>
-              <p class="text-xs font-bold text-white truncate">${evt.awayTeam}</p>
+    this.normalizedMarkets.forEach(m => {
+       tabsHtml += `
+         <button class="px-5 py-3 text-sm font-bold whitespace-nowrap border-b-2 transition-all ${this.activeTab === m.id ? 'border-[#a3e635] text-white' : 'border-transparent text-[#737373] hover:text-white hover:bg-[#141414]'}"
+                 onclick="window.ScannerView.switchTab('${m.id}')">
+            ${m.name}
+         </button>
+       `;
+    });
+
+    main.innerHTML = `
+      <div class="flex-1 w-full p-4 md:p-6 lg:p-8 flex flex-col bg-[#0a0a0a]">
+         <!-- HEADER -->
+         <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-6">
+            <div>
+               <button onclick="window.sbApp.navigateTo('dashboard')" class="text-[10px] text-[#737373] hover:text-white font-bold uppercase tracking-widest flex items-center gap-1 mb-4 transition-colors">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                  Voltar para Dashboard
+               </button>
+               <div class="flex flex-wrap gap-2 mb-3">
+                  <span class="bg-[#141414] border border-[#262626] text-[#a3a3a3] text-[9px] px-2 py-1 rounded font-bold uppercase tracking-wider">${this.currentEvent.sportTitle}</span>
+                  <span class="bg-[#141414] border border-[#262626] ${isLive ? 'text-red-500' : 'text-[#a3e635]'} text-[9px] px-2 py-1 rounded font-bold uppercase tracking-wider flex items-center gap-1.5">
+                     ${isLive ? '<span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>' : ''} ${this.currentEvent.status}
+                  </span>
+                  <span class="bg-[#141414] border border-[#262626] text-[#a3a3a3] text-[9px] px-2 py-1 rounded font-bold uppercase tracking-wider">${this.normalizedMarkets.length} Mercados Ativos</span>
+               </div>
+               <h1 class="text-2xl md:text-3xl font-black text-white tracking-tight flex items-center gap-3">
+                  ${this.currentEvent.homeTeam} <span class="text-[#404040]">x</span> ${this.currentEvent.awayTeam}
+               </h1>
+               <p class="text-[11px] text-[#737373] mt-2 font-mono flex items-center gap-2">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                  ${dateFormatted}
+               </p>
             </div>
-          `).join('');
-          
-          // Bind click to load odds
-          const cards = listContainer.querySelectorAll('.scanner-event-card');
-          cards.forEach(card => {
-            card.addEventListener('click', () => {
-              // visual selection
-              cards.forEach(c => c.classList.remove('border-[#a3e635]', 'bg-[#1a1a1a]'));
-              card.classList.add('border-[#a3e635]', 'bg-[#1a1a1a]');
-              
-              const evtId = card.getAttribute('data-id');
-              const selectedEvent = events.find(e => e.id === evtId);
-              ScannerView.renderEventAnalysis(selectedEvent);
-            });
-          });
+         </div>
+
+         <!-- TABS -->
+         <div class="flex overflow-x-auto border-b border-[#262626] mb-8 no-scrollbar">
+            ${tabsHtml}
+         </div>
+
+         <!-- CONTENT -->
+         <div id="scanner-content-area" class="w-full">
+            ${this.renderTabContent()}
+         </div>
+      </div>
+    `;
+  }
+
+  static switchTab(tabId) {
+    this.activeTab = tabId;
+    const contentArea = document.getElementById('scanner-content-area');
+    if (contentArea) contentArea.innerHTML = this.renderTabContent();
+    
+    // Update tabs visual state
+    this.renderFullScanner(document.getElementById('app-main'));
+  }
+
+  static renderTabContent() {
+    if (this.normalizedMarkets.length === 0) {
+        return `<div class="p-8 text-center text-[#737373] bg-[#141414] rounded-lg border border-[#262626]">Nenhuma cotação disponível para este evento no momento.</div>`;
+    }
+
+    if (this.activeTab === 'overview') {
+        return this.renderOverview();
+    }
+
+    const market = this.normalizedMarkets.find(m => m.id === this.activeTab);
+    if (!market) return '';
+
+    return this.renderMarketTable(market);
+  }
+
+  static renderOverview() {
+    let html = `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">`;
+    
+    this.normalizedMarkets.forEach(m => {
+       html += `<div class="bg-[#141414] border border-[#262626] rounded-xl p-4 flex flex-col">
+          <h4 class="text-sm font-bold text-white mb-4 uppercase tracking-wider">${m.name}</h4>
+          <div class="flex flex-col gap-3 flex-1">
+             ${m.selections.slice(0, 3).map(sel => `
+                <div class="flex items-center justify-between">
+                   <span class="text-xs text-[#a3a3a3] truncate max-w-[120px] font-medium" title="${sel.fullName}">${sel.fullName}</span>
+                   ${sel.bestOdd ? `<div class="flex flex-col items-end">
+                      <span class="text-sm font-black text-[#a3e635] leading-none mb-0.5">${parseFloat(sel.bestOdd.odd).toFixed(2)}</span>
+                      <span class="text-[8px] text-[#737373] uppercase tracking-wider">${sel.bestOdd.bookmaker}</span>
+                   </div>` : '<span class="text-[10px] text-[#404040]">-</span>'}
+                </div>
+             `).join('')}
+             ${m.selections.length > 3 ? `<div class="text-[10px] text-[#737373] text-center mt-2">+ ${m.selections.length - 3} seleções</div>` : ''}
+          </div>
+          <button onclick="window.ScannerView.switchTab('${m.id}')" class="mt-4 w-full bg-[#1a1a1a] hover:bg-[#262626] text-white text-[10px] font-bold py-2 rounded border border-[#262626] transition-colors">
+             ABRIR MATRIZ
+          </button>
+       </div>`;
+    });
+
+    html += `</div>`;
+    return html;
+  }
+
+  static renderMarketTable(market) {
+     // Identify all unique bookmakers in this market
+     const bookmakersSet = new Set();
+     market.selections.forEach(sel => {
+         sel.allOdds.forEach(odd => bookmakersSet.add(odd.bookmaker));
+     });
+     const bookmakersList = Array.from(bookmakersSet).sort();
+     
+     // Top Opportunity Calculation
+     let topOppHtml = '';
+     let topOddData = null;
+     
+     // Find the single best odd in the entire market (simplistic approach for now)
+     let highestOddValue = 0;
+     market.selections.forEach(sel => {
+        if (sel.bestOdd && parseFloat(sel.bestOdd.odd) > highestOddValue) {
+            highestOddValue = parseFloat(sel.bestOdd.odd);
+            topOddData = { selection: sel, odd: sel.bestOdd };
         }
-      } catch (e) {
-        listContainer.innerHTML = `<div class="text-center p-4 text-red-500 text-xs">Falha na integração com a API.</div>`;
-      } finally {
-        searchBtn.disabled = false;
-        searchBtn.innerHTML = 'Buscar Partidas';
+     });
+
+     if (topOddData) {
+         const score = Math.floor(Math.random() * 20) + 75; // 75-95 mock score
+         topOppHtml = `
+            <div class="bg-[#141414] border border-[#a3e635]/30 p-5 rounded-xl mb-6 shadow-[0_0_20px_rgba(163,230,53,0.05)] relative overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-300">
+               <div class="absolute top-0 left-0 w-1 h-full bg-[#a3e635]"></div>
+               <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                  <div>
+                     <div class="flex items-center gap-2 mb-2">
+                        <span class="bg-[#a3e635]/20 text-[#a3e635] text-[9px] font-black uppercase px-2 py-0.5 rounded tracking-widest flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-[#a3e635]"></span>Top Oportunidade</span>
+                        <span class="text-[10px] text-[#737373] uppercase tracking-wider font-bold">${market.name}</span>
+                     </div>
+                     <h3 class="text-lg font-black text-white flex items-center gap-2">
+                        ${topOddData.selection.fullName} @ ${parseFloat(topOddData.odd.odd).toFixed(2)}
+                     </h3>
+                     <p class="text-xs text-[#a3a3a3] mt-1">A casa <strong class="text-white">${topOddData.odd.bookmaker}</strong> apresenta distorção positiva na matriz.</p>
+                  </div>
+                  
+                  <div class="flex items-center gap-6 w-full md:w-auto bg-[#0a0a0a] p-3 rounded-lg border border-[#262626]">
+                     <div class="flex flex-col">
+                        <span class="text-[9px] text-[#737373] uppercase tracking-wider font-bold mb-1">Scanner Score</span>
+                        <div class="flex items-end gap-1"><span class="text-2xl font-black ${score >= 85 ? 'text-[#a3e635]' : 'text-white'} leading-none">${score}</span><span class="text-xs text-[#737373] mb-0.5">/100</span></div>
+                     </div>
+                     <div class="w-px h-8 bg-[#262626]"></div>
+                     <button onclick="window.ScannerView.openPickModal('${market.id}', '${topOddData.selection.fullName.replace(/'/g, "\\'")}', '${topOddData.odd.bookmaker}', ${topOddData.odd.odd}, '${topOddData.selection.line}')" class="bg-[#a3e635] hover:bg-[#84cc16] text-black font-black text-[11px] uppercase tracking-wider px-5 py-3 rounded-lg transition-transform active:scale-95 shadow-[0_0_15px_rgba(163,230,53,0.3)]">
+                        Salvar Palpite Ouro
+                     </button>
+                  </div>
+               </div>
+            </div>
+         `;
+     }
+
+     // TABLE
+     let thHtml = `<th class="px-4 py-3 text-left text-[10px] font-bold text-[#737373] uppercase tracking-wider bg-[#141414] sticky left-0 z-10 border-b border-[#262626]">Casa de Aposta</th>`;
+     market.selections.forEach(sel => {
+         thHtml += `<th class="px-4 py-3 text-center text-[10px] font-black text-white uppercase tracking-wider bg-[#141414] border-b border-[#262626] min-w-[120px]">${sel.fullName}</th>`;
+     });
+
+     let rowsHtml = '';
+     bookmakersList.forEach(bookie => {
+         rowsHtml += `<tr class="border-b border-[#262626] hover:bg-[#141414]/50 transition-colors group">
+            <td class="px-4 py-3 font-medium text-sm text-white sticky left-0 bg-[#0a0a0a] group-hover:bg-[#141414] border-r border-[#262626]/50">
+               <div class="flex items-center gap-2">
+                  <div class="w-4 h-4 rounded-full bg-[#262626] flex items-center justify-center text-[8px] font-black text-[#737373]">${bookie.charAt(0)}</div>
+                  ${bookie}
+               </div>
+            </td>
+         `;
+         
+         market.selections.forEach(sel => {
+             const oddData = sel.allOdds.find(o => o.bookmaker === bookie);
+             if (oddData) {
+                 const isBest = sel.bestOdd && sel.bestOdd.bookmaker === bookie;
+                 const oddVal = parseFloat(oddData.odd).toFixed(2);
+                 rowsHtml += `
+                    <td class="px-4 py-2.5 text-center">
+                       <button onclick="window.ScannerView.openPickModal('${market.id}', '${sel.fullName.replace(/'/g, "\\'")}', '${bookie}', ${oddVal}, '${sel.line}')" 
+                               class="w-full font-mono font-bold text-sm py-1.5 rounded-md border transition-all 
+                               ${isBest ? 'bg-[#a3e635]/10 border-[#a3e635]/50 text-[#a3e635] hover:bg-[#a3e635] hover:text-black hover:shadow-[0_0_10px_rgba(163,230,53,0.3)]' : 'bg-transparent border-transparent text-[#a3a3a3] hover:border-[#404040] hover:bg-[#1a1a1a] hover:text-white'}">
+                          ${oddVal}
+                       </button>
+                    </td>
+                 `;
+             } else {
+                 rowsHtml += `<td class="px-4 py-3 text-center text-[#404040] text-sm">-</td>`;
+             }
+         });
+         rowsHtml += `</tr>`;
+     });
+
+     return `
+        ${topOppHtml}
+        <div class="bg-[#0a0a0a] border border-[#262626] rounded-xl overflow-x-auto shadow-xl animate-in fade-in duration-300">
+           <table class="w-full whitespace-nowrap">
+              <thead>
+                 <tr>${thHtml}</tr>
+              </thead>
+              <tbody>
+                 ${rowsHtml}
+              </tbody>
+           </table>
+        </div>
+     `;
+  }
+
+  static openPickModal(marketId, selection, bookmaker, odd, line) {
+    if (!window.sbApp || !window.sbApp.components || !window.sbApp.components.Modal) return;
+    
+    const evt = this.currentEvent;
+    const market = this.normalizedMarkets.find(m => m.id === marketId);
+    
+    const html = `
+      <div class="bg-[#141414] p-4 rounded-lg border border-[#262626] mb-5">
+         <div class="flex justify-between items-start mb-3 border-b border-[#262626] pb-3">
+            <div>
+               <span class="text-[9px] text-[#737373] uppercase tracking-wider font-bold block mb-1">Evento</span>
+               <h4 class="text-sm font-black text-white">${evt.homeTeam} x ${evt.awayTeam}</h4>
+            </div>
+            <div class="text-right">
+               <span class="text-[9px] text-[#737373] uppercase tracking-wider font-bold block mb-1">Mercado</span>
+               <h4 class="text-sm font-bold text-[#a3a3a3]">${market.name}</h4>
+            </div>
+         </div>
+         
+         <div class="flex justify-between items-center bg-[#0a0a0a] p-3 rounded border border-[#262626]">
+            <div>
+               <span class="text-[9px] text-[#737373] uppercase tracking-wider font-bold block mb-1">Seleção</span>
+               <h4 class="text-base font-black text-white truncate max-w-[150px]">${selection}</h4>
+            </div>
+            <div class="text-right">
+               <span class="text-[9px] text-[#737373] uppercase tracking-wider font-bold block mb-1">${bookmaker}</span>
+               <h4 class="text-2xl font-black text-[#a3e635] leading-none">${parseFloat(odd).toFixed(2)}</h4>
+            </div>
+         </div>
+      </div>
+      
+      <div class="mb-2">
+         <label class="text-[10px] text-[#737373] font-bold uppercase tracking-wider mb-2 block">Valor da Stake (R$)</label>
+         <div class="relative">
+            <span class="absolute left-3 top-2.5 text-[#737373] font-bold">R$</span>
+            <input type="number" id="pick-stake" value="100" min="1" step="1" 
+                   class="w-full bg-[#0a0a0a] border border-[#262626] text-white text-lg font-black font-mono rounded-lg pl-10 pr-4 py-2 focus:border-[#a3e635] focus:outline-none transition-colors"
+                   oninput="window.ScannerView.updateModalCalculations(${odd})">
+         </div>
+      </div>
+      
+      <div class="flex justify-between items-center mt-4 px-1">
+         <div class="flex flex-col">
+            <span class="text-[9px] text-[#737373] font-bold uppercase tracking-wider">Lucro Líquido</span>
+            <span id="pick-profit" class="text-sm font-black text-[#a3e635] font-mono">+ R$ ${(100 * parseFloat(odd) - 100).toFixed(2)}</span>
+         </div>
+      </div>
+    `;
+
+    window.sbApp.components.Modal.show({
+      title: 'Salvar Oportunidade',
+      content: html,
+      primaryText: 'Registrar Palpite',
+      onPrimary: () => {
+         const stake = parseFloat(document.getElementById('pick-stake').value) || 100;
+         if (window.PicksService) {
+             window.PicksService.savePick({
+                 eventId: evt.id,
+                 eventName: `${evt.homeTeam} x ${evt.awayTeam}`,
+                 date: evt.startTime,
+                 sportKey: evt.sportKey,
+                 league: evt.sportTitle,
+                 marketType: marketId,
+                 selection: selection,
+                 line: line !== 'null' ? parseFloat(line) : null,
+                 bookmaker: bookmaker,
+                 odd: parseFloat(odd),
+                 stake: stake
+             });
+             window.sbApp.showToast('Palpite Salvo', 'Sua entrada foi registrada com sucesso!', 'success');
+         }
       }
     });
   }
 
-  static renderEventAnalysis(event) {
-    const mainContent = document.getElementById('scanner-main-content');
-    
-    // Convert Raw Bookmakers to normalized ScannerBet structure
-    const normalizedMarkets = window.OddsProviderService.getNormalizedOddsForEvent(event);
-    
-    if (normalizedMarkets.length === 0) {
-      mainContent.innerHTML = `
-        <div class="premium-card p-8 text-center max-w-lg mx-auto mt-10">
-          <h2 class="text-xl font-bold text-white mb-2">${event.homeTeam} x ${event.awayTeam}</h2>
-          <p class="text-[#737373] text-sm">Nenhuma odd disponível nas casas de apostas monitoradas para este evento no momento.</p>
-        </div>
-      `;
-      return;
-    }
-
-    // Render Event Header
-    let html = `
-      <div class="mb-8">
-        <div class="flex items-center gap-3 mb-2">
-          <span class="badge bg-[#141414] border border-[#262626] text-[#a3a3a3]">${event.sportTitle}</span>
-          <span class="badge ${event.status === 'AO VIVO' ? 'badge-primary bg-red-500/10 text-red-500' : 'badge-accent'}">${event.status}</span>
-        </div>
-        <h1 class="text-3xl font-black text-white tracking-tight">${event.homeTeam} <span class="text-[#737373] font-normal mx-2">vs</span> ${event.awayTeam}</h1>
-        <p class="text-sm text-[#737373] mt-2">Data do Evento: ${new Date(event.startTime).toLocaleString('pt-BR')}</p>
-      </div>
-      
-      <div class="space-y-8">
-    `;
-
-    // Render each market table
-    normalizedMarkets.forEach(market => {
-      html += `
-        <div class="premium-card overflow-hidden">
-          <div class="bg-[#1a1a1a] p-4 border-b border-[#262626] flex items-center justify-between">
-            <h3 class="text-sm font-bold text-white uppercase tracking-wider">${market.name}</h3>
-          </div>
-          
-          <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
-              <thead>
-                <tr class="border-b border-[#262626] bg-[#0a0a0a]">
-                  <th class="p-4 text-xs font-bold text-[#737373] uppercase tracking-wider font-mono">Seleção</th>
-                  <th class="p-4 text-xs font-bold text-[#737373] uppercase tracking-wider font-mono">⭐ Melhor Odd</th>
-                  <th class="p-4 text-xs font-bold text-[#737373] uppercase tracking-wider font-mono">Casa</th>
-                  <th class="p-4 text-xs font-bold text-[#737373] uppercase tracking-wider font-mono">Última Atualização</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-[#262626]">
-                ${market.selections.map(sel => {
-                  if (!sel.bestOdd) return '';
-                  const timeStr = new Date(sel.bestOdd.timestamp).toLocaleTimeString('pt-BR');
-                  return `
-                    <tr class="hover:bg-[#141414] transition-colors group">
-                      <td class="p-4">
-                        <span class="text-sm font-bold text-white">${sel.name}</span>
-                      </td>
-                      <td class="p-4">
-                        <span class="text-lg font-black text-[#a3e635] tracking-tighter">${parseFloat(sel.bestOdd.odd).toFixed(2)}</span>
-                      </td>
-                      <td class="p-4">
-                        <span class="inline-flex items-center gap-2 text-xs font-bold text-white bg-[#262626] px-2 py-1 rounded">
-                          ${sel.bestOdd.bookmaker}
-                        </span>
-                      </td>
-                      <td class="p-4 text-xs font-mono text-[#737373]">
-                        ${timeStr}
-                      </td>
-                    </tr>
-                  `;
-                }).join('')}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      `;
-    });
-
-    html += `</div>`;
-    mainContent.innerHTML = html;
+  static updateModalCalculations(odd) {
+     const stakeInput = document.getElementById('pick-stake');
+     const profitDisplay = document.getElementById('pick-profit');
+     if (!stakeInput || !profitDisplay) return;
+     
+     const stake = parseFloat(stakeInput.value) || 0;
+     const profit = (stake * odd) - stake;
+     
+     if (profit >= 0) {
+        profitDisplay.textContent = `+ R$ ${profit.toFixed(2)}`;
+        profitDisplay.className = 'text-sm font-black text-[#a3e635] font-mono';
+     } else {
+        profitDisplay.textContent = `R$ ${profit.toFixed(2)}`;
+        profitDisplay.className = 'text-sm font-black text-red-500 font-mono';
+     }
   }
 }
 

@@ -38,14 +38,19 @@ class OddsProviderService {
         const mktObj = marketMap.get(market.key);
         
         market.outcomes.forEach(outcome => {
-          if (!mktObj.selections.has(outcome.name)) {
-            mktObj.selections.set(outcome.name, {
+          const point = outcome.point ? ` ${outcome.point > 0 && market.key === 'spreads' ? '+' : ''}${outcome.point}` : '';
+          const selectionKey = `${outcome.name}${point}`;
+          
+          if (!mktObj.selections.has(selectionKey)) {
+            mktObj.selections.set(selectionKey, {
               name: outcome.name,
+              line: outcome.point || null,
+              fullName: selectionKey,
               odds: []
             });
           }
           
-          mktObj.selections.get(outcome.name).odds.push({
+          mktObj.selections.get(selectionKey).odds.push({
             bookmaker: bookmaker.title,
             bookmakerKey: bookmaker.key,
             odd: outcome.price,
@@ -62,6 +67,8 @@ class OddsProviderService {
         const bestOddObj = this.identifyBestOdd(sel.odds);
         return {
           name: sel.name,
+          fullName: sel.fullName,
+          line: sel.line,
           bestOdd: bestOddObj,
           allOdds: sel.odds
         };

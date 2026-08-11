@@ -27,18 +27,22 @@ class PicksService {
     }
   }
 
+  // Schema Updated for Phase 7 / Phase B compatibility
   savePick(pickData) {
     const newPick = {
-      id: 'pick_' + Date.now(),
-      eventTitle: pickData.eventTitle,
-      marketName: pickData.marketName,
-      selectionName: pickData.selectionName,
+      id: 'pick_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+      eventId: pickData.eventId || null,
+      eventName: pickData.eventName,
+      date: pickData.date || null,
+      sportKey: pickData.sportKey || null,
+      league: pickData.league || null,
+      marketType: pickData.marketType,
+      selection: pickData.selection,
+      line: pickData.line !== undefined ? pickData.line : null,
       bookmaker: pickData.bookmaker,
       odd: parseFloat(pickData.odd),
-      implicitProb: pickData.implicitProb,
-      ev: pickData.ev,
-      stake: pickData.stake || 1, // unit
-      status: 'PENDENTE',
+      stake: pickData.stake || 100,
+      status: 'PENDING',
       createdAt: Date.now()
     };
 
@@ -50,12 +54,14 @@ class PicksService {
   resolvePick(pickId, status) {
     const pick = this.picks.find(p => p.id === pickId);
     if (pick) {
-      pick.status = status; // GREEN or RED
-      // Naive ROI calculation basis
-      if (status === 'GREEN') {
+      pick.status = status; // WON, LOST, PUSH
+      
+      if (status === 'WON') {
           pick.profit = (pick.stake * pick.odd) - pick.stake;
-      } else {
+      } else if (status === 'LOST') {
           pick.profit = -pick.stake;
+      } else if (status === 'PUSH') {
+          pick.profit = 0;
       }
       this._savePicks();
     }
@@ -66,23 +72,25 @@ class PicksService {
   }
 
   getMetrics() {
-    const greens = this.picks.filter(p => p.status === 'GREEN').length;
-    const reds = this.picks.filter(p => p.status === 'RED').length;
-    const totalResolved = greens + reds;
+    const won = this.picks.filter(p => p.status === 'WON').length;
+    const lost = this.picks.filter(p => p.status === 'LOST').length;
+    const totalResolved = won + lost + this.picks.filter(p => p.status === 'PUSH').length;
     const totalPicks = this.picks.length;
     
-    const winRate = totalResolved > 0 ? (greens / totalResolved) * 100 : 0;
+    // Win rate only calculates actual W/L (ignoring pushes for the rate)
+    const effectiveResolved = won + lost;
+    const winRate = effectiveResolved > 0 ? (won / effectiveResolved) * 100 : 0;
     
     let totalProfit = 0;
     this.picks.forEach(p => {
-        if (p.profit) totalProfit += p.profit;
+        if (p.profit !== undefined) totalProfit += p.profit;
     });
 
     return {
       totalPicks,
       totalResolved,
-      greens,
-      reds,
+      won,
+      lost,
       winRate,
       totalProfit
     };
