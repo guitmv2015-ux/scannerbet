@@ -20,6 +20,11 @@ class DateUtil {
     const horas = String(d.getHours()).padStart(2, '0');
     const minutos = String(d.getMinutes()).padStart(2, '0');
 
+    const relStatus = DateUtil.getRelativeStatus(dateInput);
+    if (relStatus === 'Hoje' || relStatus === 'Amanhã') {
+        return `${relStatus} • ${horas}:${minutos}`;
+    }
+
     return `${dia} ${mes} • ${horas}:${minutos}`;
   }
 

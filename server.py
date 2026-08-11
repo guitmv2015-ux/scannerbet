@@ -64,7 +64,7 @@ class ScannerBetProxy(SimpleHTTPRequestHandler):
                 base_url += f"&{query}"
                 
             req = urllib.request.Request(base_url, headers={'User-Agent': 'ScannerBet/1.0'})
-            with urllib.request.urlopen(req) as response:
+            with urllib.request.urlopen(req, timeout=10) as response:
                 data = json.loads(response.read().decode())
                 
                 # Update Cache

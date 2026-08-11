@@ -114,7 +114,15 @@ class EventsService {
 
   // Gets multiple sports concurrently for the Massive Dashboard
   async getMassiveEvents(sportKeys = []) {
-    if (sportKeys.length === 0) sportKeys = this.userPreferences.sports;
+    if (sportKeys.length === 0) {
+       try {
+           const active = await this.getActiveSports();
+           sportKeys = active.slice(0, 3).map(s => s.key);
+       } catch(e) {
+           sportKeys = this.userPreferences.sports;
+       }
+    }
+    if (sportKeys.length === 0) sportKeys = ['soccer_brazil_campeonato'];
     
     const promises = sportKeys.map(key => this.getLiveEvents(key));
     const results = await Promise.allSettled(promises);
