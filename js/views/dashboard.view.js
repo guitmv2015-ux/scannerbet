@@ -262,6 +262,14 @@ class DashboardView {
 
     const updateTimeStr = this.lastUpdate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
+    // Calculate Win Rate and P&L
+    const state = window.sbState.getState();
+    const userPicks = state.user?.picks || [];
+    const resolvedPicks = userPicks.filter(p => p.status === 'WON' || p.status === 'LOST');
+    const winRate = resolvedPicks.length > 0 ? ((userPicks.filter(p => p.status === 'WON').length / resolvedPicks.length) * 100).toFixed(0) : '--';
+    const picksProfit = userPicks.reduce((sum, p) => sum + (p.status === 'WON' ? ((p.odd * p.stake) - p.stake) : (p.status === 'LOST' ? -p.stake : 0)), 0);
+    const picksStake = userPicks.reduce((sum, p) => sum + p.stake, 0);
+
     // Filtrar Eventos Brasileiros (Prioridade: Série A, B, Copa do Brasil ou qualquer coisa 'brazil')
     let primaryEvents = [];
     let secondaryEvents = [];
@@ -298,7 +306,7 @@ class DashboardView {
            <div>
               <h1 class="text-3xl font-black text-white tracking-tight flex items-center gap-3">
                  SCANNERBET
-                 <span class="px-2 py-0.5 bg-gradient-to-r from-[#06b6d4] to-blue-500 text-white rounded text-[10px] uppercase tracking-widest font-black shadow-lg">Central de Descoberta</span>
+                 <span class="px-2 py-0.5 bg-gradient-to-r from-[#06b6d4] to-blue-500 text-white rounded text-[10px] uppercase tracking-widest font-black shadow-lg">Central de Controle</span>
               </h1>
            </div>
            <div class="flex flex-wrap items-center gap-4 bg-[#0f0f0f] border border-[#262626] rounded-xl p-2 pr-4">
@@ -313,13 +321,34 @@ class DashboardView {
            </div>
         </div>
 
+        <!-- VISÃO GERAL -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+           <div class="bg-[#0f0f0f] border border-[#262626] rounded-xl p-6 flex flex-col justify-center items-center relative overflow-hidden group hover:border-[#404040] transition-all">
+              <div class="absolute -right-4 -bottom-4 opacity-5 group-hover:opacity-10 transition-opacity"><svg width="80" height="80" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 22h20L12 2z"></path></svg></div>
+              <span class="text-[10px] text-[#737373] uppercase font-black tracking-widest mb-2 z-10">Eventos Hoje</span>
+              <span class="text-4xl font-black text-white font-mono z-10">${this.allEvents.filter(e => new Date(e.startTime) <= new Date(new Date().setHours(23,59,59,999))).length}</span>
+           </div>
+           <div class="bg-[#0f0f0f] border border-[#262626] rounded-xl p-6 flex flex-col justify-center items-center relative overflow-hidden group hover:border-[#404040] transition-all">
+              <div class="absolute -right-4 -bottom-4 opacity-5 text-emerald-500 group-hover:opacity-10 transition-opacity"><svg width="80" height="80" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg></div>
+              <span class="text-[10px] text-[#737373] uppercase font-black tracking-widest mb-2 z-10">Casas Monitoradas</span>
+              <span class="text-4xl font-black text-white font-mono z-10">${this.totalBookmakers ? this.totalBookmakers.size : 0}</span>
+           </div>
+           <div class="bg-[#0f0f0f] border border-[#262626] rounded-xl p-6 flex flex-col justify-center items-center relative overflow-hidden group hover:border-[#a3e635]/50 transition-all cursor-pointer" onclick="document.getElementById('oportunidades-section').scrollIntoView({behavior: 'smooth'})">
+              <div class="absolute -right-4 -bottom-4 opacity-5 text-[#a3e635] group-hover:opacity-10 transition-opacity"><svg width="80" height="80" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"></circle></svg></div>
+              <span class="text-[10px] text-[#737373] uppercase font-black tracking-widest mb-2 z-10 flex items-center gap-1">Oportunidades <span class="w-1.5 h-1.5 rounded-full bg-[#a3e635] animate-pulse"></span></span>
+              <span class="text-4xl font-black text-[#a3e635] font-mono z-10">${this.opportunities ? this.opportunities.length : 0}</span>
+           </div>
+           <div class="bg-[#0f0f0f] border border-[#262626] rounded-xl p-6 flex flex-col justify-center items-center relative overflow-hidden group hover:border-[#404040] transition-all cursor-pointer" onclick="window.sbApp.navigateTo('metrics')">
+              <div class="absolute -right-4 -bottom-4 opacity-5 text-blue-500 group-hover:opacity-10 transition-opacity"><svg width="80" height="80" viewBox="0 0 24 24" fill="currentColor"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg></div>
+              <span class="text-[10px] text-[#737373] uppercase font-black tracking-widest mb-2 z-10">Meu Win Rate</span>
+              <span class="text-4xl font-black ${winRate !== '--' && winRate >= 50 ? 'text-[#06b6d4]' : (winRate !== '--' ? 'text-red-500' : 'text-white')} font-mono z-10">${winRate}${winRate !== '--' ? '%' : ''}</span>
+           </div>
+        </div>
+
         <!-- DESTAQUE GLOBAL DE BUSCA (AUTOCOMPLETE NATIVO) -->
-        <div class="bg-gradient-to-r from-[#06b6d4]/20 to-blue-600/20 border border-[#06b6d4]/30 rounded-2xl p-6 md:p-10 relative overflow-visible flex flex-col items-center text-center shadow-2xl">
-           <div class="absolute -top-24 -right-24 w-64 h-64 bg-[#06b6d4]/10 rounded-full blur-3xl pointer-events-none"></div>
-           <div class="absolute -bottom-24 -left-24 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl pointer-events-none"></div>
-           
-           <h2 class="text-2xl md:text-4xl font-black text-white mb-2 relative z-10 tracking-tight">Pesquise por time, campeonato ou evento...</h2>
-           <p class="text-[#a3a3a3] text-sm md:text-base mb-8 relative z-10">O ScannerBet monitora ${this.allEvents.length} eventos globais em tempo real.</p>
+        <div class="bg-gradient-to-r from-[#06b6d4]/10 to-blue-600/10 border border-[#262626] rounded-2xl p-6 md:p-10 relative overflow-visible flex flex-col items-center text-center shadow-lg">
+           <h2 class="text-2xl md:text-3xl font-black text-white mb-2 relative z-10 tracking-tight">Buscar Partida Específica</h2>
+           <p class="text-[#a3a3a3] text-sm md:text-base mb-6 relative z-10">Consulte o Scanner diretamente pelo nome do time ou liga.</p>
            
            <div class="relative w-full max-w-4xl z-50">
               <input type="text" id="global-search" placeholder="🔎 Ex: Flamengo, Brasileirão, Palmeiras, Premier League..."
@@ -407,7 +436,7 @@ class DashboardView {
            `}
         </div>
 
-        <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+        <div id="oportunidades-section" class="grid grid-cols-1 xl:grid-cols-3 gap-8 scroll-mt-24">
           
           <!-- ⭐ MELHORES ODDS DA RODADA (Substituindo 'Oportunidades em Destaque') -->
           <div class="xl:col-span-2 flex flex-col space-y-6">
@@ -465,37 +494,59 @@ class DashboardView {
              </div>
           </div>
 
-          <!-- TODOS OS EVENTOS SECUNDÁRIOS -->
+          <!-- MINHA ATIVIDADE E DESEMPENHO -->
           <div class="flex flex-col space-y-6">
              <div class="flex items-center justify-between border-b border-[#262626] pb-3">
-                <h2 class="text-xl font-black text-white uppercase tracking-widest">Outros Campeonatos</h2>
-                <span class="text-[10px] bg-[#1a1a1a] text-[#06b6d4] px-2 py-0.5 rounded font-mono font-bold border border-[#333]">${secondaryEvents.length} Jogos</span>
+                <h2 class="text-xl font-black text-white uppercase tracking-widest">Minha Atividade</h2>
+                <button onclick="window.sbApp.navigateTo('history')" class="text-[10px] text-[#06b6d4] hover:text-white uppercase tracking-widest font-black transition-colors">Ver Relatório</button>
              </div>
 
-             <div class="bg-[#0a0a0a] border border-[#262626] rounded-2xl overflow-hidden flex flex-col h-[700px]">
+             <!-- Meu Desempenho (Mini) -->
+             <div class="grid grid-cols-2 gap-3 mb-2">
+                <div class="bg-[#0f0f0f] border border-[#262626] rounded-xl p-3 text-center">
+                   <p class="text-[9px] text-[#737373] uppercase tracking-widest font-bold">ROI Geral</p>
+                   <p class="text-lg font-black ${winRate !== '--' && winRate >= 5 ? 'text-[#a3e635]' : (winRate !== '--' ? 'text-red-500' : 'text-white')} font-mono">
+                      ${userPicks.length > 0 ? (picksProfit / picksStake * 100).toFixed(1) + '%' : '--%'}
+                   </p>
+                </div>
+                <div class="bg-[#0f0f0f] border border-[#262626] rounded-xl p-3 text-center">
+                   <p class="text-[9px] text-[#737373] uppercase tracking-widest font-bold">P&L</p>
+                   <p class="text-lg font-black ${picksProfit >= 0 ? 'text-[#a3e635]' : 'text-red-500'} font-mono">
+                      ${userPicks.length > 0 ? (picksProfit >= 0 ? '+' : '') + 'R$' + picksProfit.toFixed(0) : '--'}
+                   </p>
+                </div>
+                <div class="bg-[#0f0f0f] border border-[#262626] rounded-xl p-3 text-center">
+                   <p class="text-[9px] text-[#737373] uppercase tracking-widest font-bold">Greens</p>
+                   <p class="text-lg font-black text-[#a3e635] font-mono">${userPicks.filter(p=>p.status==='WON').length}</p>
+                </div>
+                <div class="bg-[#0f0f0f] border border-[#262626] rounded-xl p-3 text-center">
+                   <p class="text-[9px] text-[#737373] uppercase tracking-widest font-bold">Reds</p>
+                   <p class="text-lg font-black text-red-500 font-mono">${userPicks.filter(p=>p.status==='LOST').length}</p>
+                </div>
+             </div>
+
+             <!-- Últimos Palpites -->
+             <div class="bg-[#0a0a0a] border border-[#262626] rounded-2xl overflow-hidden flex flex-col h-[400px]">
                 <div class="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-2">
-                   ${secondaryEvents.length === 0 ? '<div class="text-center text-[#737373] text-sm p-6">Nenhum evento secundário disponível.</div>' : ''}
+                   ${userPicks.length === 0 ? '<div class="text-center text-[#737373] text-sm p-6">Nenhum palpite salvo.</div>' : ''}
                    
-                   ${secondaryEvents.map((evt) => {
-                      const isLive = evt.status === 'AO VIVO';
-                      const dateStr = window.DateUtil ? window.DateUtil.formatEventDate(evt.startTime) : new Date(evt.startTime).toLocaleString();
-                      const mkts = evt.availableMarkets || [];
-                      
+                   ${[...userPicks].sort((a,b)=>b.timestamp-a.timestamp).slice(0, 10).map((pick) => {
+                      const isPending = pick.status === 'PENDING';
                       return `
-                      <div onclick="window.sbApp.navigateTo('scanner', { sportKey: '${evt.sportKey}', eventId: '${evt.id}' })" class="bg-[#141414] border border-[#262626] hover:border-[#06b6d4]/50 rounded-xl p-4 cursor-pointer transition-colors group">
-                         <div class="flex items-center justify-between mb-3">
-                            <span class="text-[10px] text-[#a3a3a3] font-mono font-bold group-hover:text-white transition-colors">${dateStr}</span>
-                            ${isLive ? '<span class="text-[9px] bg-red-500/20 text-red-500 border border-red-500/30 px-2 py-0.5 rounded uppercase font-black animate-pulse">AO VIVO</span>' : '<span class="text-[9px] text-[#737373] uppercase font-black tracking-widest">PRÉ-JOGO</span>'}
-                         </div>
-                         <div class="mb-3">
-                             <p class="text-[10px] text-[#06b6d4] font-black uppercase tracking-widest truncate">${evt.sportTitle}</p>
-                         </div>
-                         <div class="flex flex-col gap-1 mb-4">
-                             <p class="text-sm font-black text-white group-hover:text-white transition-colors leading-tight">${evt.homeTeam}</p>
-                             <p class="text-sm font-black text-white group-hover:text-white transition-colors leading-tight">${evt.awayTeam}</p>
-                         </div>
-                         <div class="flex flex-wrap gap-1">
-                             ${mkts.slice(0,3).map(m => `<span class="text-[8px] uppercase tracking-widest text-[#737373] bg-[#0a0a0a] px-1.5 py-0.5 rounded border border-[#262626]">${m}</span>`).join('')}
+                      <div class="bg-[#141414] border border-[#262626] hover:border-[#06b6d4]/50 rounded-xl p-4 transition-colors group relative overflow-hidden">
+                         <div class="absolute top-0 left-0 w-1 h-full ${isPending ? 'bg-[#737373]' : (pick.status === 'WON' ? 'bg-[#a3e635]' : 'bg-red-500')}"></div>
+                         <div class="pl-2">
+                            <div class="flex items-center justify-between mb-2">
+                               <span class="text-[10px] text-[#a3a3a3] font-mono font-bold">${new Date(pick.timestamp).toLocaleDateString('pt-BR')}</span>
+                               <span class="text-[9px] uppercase font-black tracking-widest ${isPending ? 'text-[#737373]' : (pick.status === 'WON' ? 'text-[#a3e635]' : 'text-red-500')}">${isPending ? 'PENDENTE' : (pick.status === 'WON' ? 'GANHOU' : 'PERDEU')}</span>
+                            </div>
+                            <div class="mb-2">
+                                <p class="text-[11px] font-black text-white group-hover:text-[#06b6d4] transition-colors leading-tight">${pick.eventName}</p>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <p class="text-[10px] font-black text-white uppercase tracking-widest bg-[#1a1a1a] px-2 py-1 rounded border border-[#333]">${pick.selection} <span class="text-[#06b6d4] font-mono ml-1">@${parseFloat(pick.odd).toFixed(2)}</span></p>
+                                <button onclick="window.sbApp.navigateTo('scanner', { sportKey: '${pick.sportKey || 'soccer_brazil_campeonato'}', eventId: '${pick.eventId || ''}' })" class="text-[9px] text-white hover:text-black bg-[#262626] hover:bg-[#06b6d4] px-2 py-1 rounded font-black uppercase tracking-widest transition-colors border border-[#404040]">Analisar</button>
+                            </div>
                          </div>
                       </div>
                    `}).join('')}

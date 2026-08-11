@@ -5,6 +5,10 @@
 
 class OddsProviderService {
   
+  constructor() {
+    this.oddsHistory = new Map(); // For tracking trend (up/down) in the session
+  }
+
   // Normalizes raw bookmakers from The Odds API for a specific event
   getNormalizedOddsForEvent(event) {
     const config = window.SCANNERBET_CONFIG.API_CONFIG;
@@ -50,10 +54,22 @@ class OddsProviderService {
             });
           }
           
+          const historyKey = `${event.id}_${market.key}_${selectionKey}_${bookmaker.key}`;
+          const currentOdd = outcome.price;
+          let trend = 0;
+          
+          if (this.oddsHistory.has(historyKey)) {
+              const prevOdd = this.oddsHistory.get(historyKey);
+              if (currentOdd > prevOdd) trend = 1; // Subiu
+              else if (currentOdd < prevOdd) trend = -1; // Caiu
+          }
+          this.oddsHistory.set(historyKey, currentOdd);
+          
           mktObj.selections.get(selectionKey).odds.push({
             bookmaker: bookmaker.title,
             bookmakerKey: bookmaker.key,
-            odd: outcome.price,
+            odd: currentOdd,
+            trend: trend, // 1 for UP, -1 for DOWN, 0 for STABLE
             timestamp: new Date(bookmaker.last_update).getTime()
           });
         });

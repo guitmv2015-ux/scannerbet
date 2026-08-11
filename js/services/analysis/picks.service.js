@@ -42,8 +42,10 @@ class PicksService {
       bookmaker: pickData.bookmaker,
       odd: parseFloat(pickData.odd),
       stake: pickData.stake || 100,
+      marketSnapshot: pickData.marketSnapshot || null, // FASE 6: Fotografia do mercado (diff, media, bestOdd)
       status: 'PENDING',
-      createdAt: Date.now()
+      createdAt: Date.now(),
+      timestamp: Date.now()
     };
 
     this.picks.unshift(newPick);

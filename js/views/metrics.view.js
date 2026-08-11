@@ -112,20 +112,6 @@ class MetricsView {
                </div>
             </div>
 
-            <div class="bg-[#0a0a0a] border border-[#262626] rounded-xl p-6">
-               <h3 class="text-sm font-black text-white uppercase tracking-widest mb-6 flex items-center gap-2">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.59-9.21l-3.23 2.15"></path></svg> 
-                  Evolução do Hit Rate (Gráfico)
-               </h3>
-               
-               <div id="metrics-bar-chart-container" class="w-full h-48 flex items-end justify-between gap-1 pb-2">
-                  <!-- Gerado dinamicamente caso houvesse biblioteca gráfica. Como fallback, um placeholder animado: -->
-                  ${[45,60,30,80,65,90,75].map(h => `<div class="w-full bg-[#06b6d4] rounded-t-sm" style="height: ${h}%; opacity: ${h/100}"></div>`).join('')}
-               </div>
-               <div class="flex justify-between mt-2 text-[9px] text-[#737373] uppercase tracking-widest font-bold">
-                  <span>Últimos 7 dias</span>
-                  <span>Hoje</span>
-               </div>
             </div>
          </div>
       </div>

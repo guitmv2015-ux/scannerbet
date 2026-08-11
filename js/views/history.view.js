@@ -39,7 +39,7 @@ class HistoryView {
     main.innerHTML = `
       <div class="flex-1 w-full p-4 lg:p-6 flex flex-col relative animate-in fade-in duration-500 max-w-[1600px] mx-auto pb-12">
          
-         <!-- HEADER -->
+          <!-- HEADER -->
          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-[#262626] pb-5 mb-6">
             <div>
                <h1 class="text-3xl font-black text-white tracking-tight flex items-center gap-3">
@@ -53,6 +53,12 @@ class HistoryView {
                <div class="bg-[#0a0a0a] border border-[#262626] rounded-xl p-4 px-6 text-center shadow-lg">
                   <p class="text-[9px] text-[#737373] uppercase tracking-widest font-black mb-1">Total Apostado</p>
                   <p class="text-2xl font-black text-white font-mono">R$ ${picks.reduce((sum, p) => sum + p.stake, 0).toFixed(2)}</p>
+               </div>
+               <div class="bg-[#0a0a0a] border border-[#262626] rounded-xl p-4 px-6 text-center shadow-lg">
+                  <p class="text-[9px] text-[#737373] uppercase tracking-widest font-black mb-1">P&L Realizado</p>
+                  <p class="text-2xl font-black ${picks.reduce((sum, p) => sum + (p.status === 'WON' ? ((p.odd * p.stake) - p.stake) : (p.status === 'LOST' ? -p.stake : 0)), 0) >= 0 ? 'text-[#a3e635]' : 'text-red-500'} font-mono">
+                     R$ ${picks.reduce((sum, p) => sum + (p.status === 'WON' ? ((p.odd * p.stake) - p.stake) : (p.status === 'LOST' ? -p.stake : 0)), 0).toFixed(2)}
+                  </p>
                </div>
             </div>
          </div>
@@ -158,6 +164,29 @@ class HistoryView {
                       </div>
                    </div>
                 </div>
+
+                <!-- Snapshot Analysis (Fase 6) -->
+                 ${pick.marketSnapshot ? `
+                 <div class="mt-4 pt-4 border-t border-[#262626] flex flex-wrap items-center justify-between gap-4 pl-3 bg-[#141414]/50 rounded-b-2xl p-4 -mx-6 -mb-6 pb-6">
+                    <div class="flex items-center gap-6">
+                       <div>
+                          <span class="text-[9px] text-[#737373] uppercase tracking-widest font-black block mb-1">Média do Mercado no Registro</span>
+                          <span class="text-sm font-mono font-bold text-[#a3a3a3]">@${pick.marketSnapshot.avg.toFixed(2)}</span>
+                       </div>
+                       <div>
+                          <span class="text-[9px] text-[#737373] uppercase tracking-widest font-black block mb-1">Distorção</span>
+                          <span class="text-sm font-mono font-bold text-emerald-400">+${pick.marketSnapshot.diff.toFixed(1)}%</span>
+                       </div>
+                       <div>
+                          <span class="text-[9px] text-[#737373] uppercase tracking-widest font-black block mb-1">Melhor Odd (No momento)</span>
+                          <span class="text-sm font-mono font-bold text-white">@${parseFloat(pick.marketSnapshot.bestOdd.odd).toFixed(2)} <span class="text-[8px] text-[#737373] ml-1">(${pick.marketSnapshot.bestOdd.bookmaker})</span></span>
+                       </div>
+                    </div>
+                    <button onclick="window.sbApp.navigateTo('scanner', { sportKey: '${pick.sportKey || 'soccer_brazil_campeonato'}', eventId: '${pick.eventId || ''}' })" class="bg-[#1a1a1a] hover:bg-[#06b6d4] text-white hover:text-black border border-[#333] hover:border-[#06b6d4] px-4 py-2 rounded text-[10px] font-black uppercase tracking-widest transition-colors shadow-md">
+                       Ver Jogo Atual
+                    </button>
+                 </div>
+                 ` : ''}
 
                 ${isPending ? `
                 <div class="mt-6 pt-4 border-t border-[#262626] flex items-center justify-end gap-3 pl-3">

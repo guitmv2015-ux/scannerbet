@@ -652,7 +652,7 @@ class ScannerView {
                  </div>
                  <div class="flex justify-between items-center mt-3 pt-2 border-t border-[#1a1a1a]">
                     <span class="text-[9px] text-[#404040] uppercase tracking-widest font-black">Disponível em ${sel.stats.numBookmakers} casas</span>
-                    ${sel.stats.dispersion > 0 ? `<span class="text-[9px] text-[#737373] font-mono" title="Dispersão">σ ${sel.stats.dispersion.toFixed(2)}</span>` : ''}
+                    ${sel.stats.dispersion > 0 ? `<span class="text-[9px] text-[#737373] font-mono cursor-help" title="Dispersão (σ): Mede a variação das odds entre as casas. Uma dispersão maior indica divergência de precificação e possível valor oculto.">σ ${sel.stats.dispersion.toFixed(2)}</span>` : ''}
                  </div>
              </div>`;
          }
@@ -700,8 +700,8 @@ class ScannerView {
              if (oddData) {
                  const isBest = sel.bestOdd && sel.bestOdd.bookmaker === bookie;
                  const oddVal = parseFloat(oddData.odd).toFixed(2);
-                 const trendHtml = oddData.trend > 0 ? '<span class="text-[8px] text-emerald-500 font-bold ml-1">▲</span>' : (oddData.trend < 0 ? '<span class="text-[8px] text-red-500 font-bold ml-1">▼</span>' : '');
-                 const probHtml = oddData.impliedProb ? `<span class="text-[8px] text-[#737373] font-mono mt-0.5 block">${oddData.impliedProb.toFixed(1)}%</span>` : '';
+                 const trendHtml = oddData.trend > 0 ? '<span class="text-[8px] text-emerald-500 font-bold ml-1" title="Subindo">▲</span>' : (oddData.trend < 0 ? '<span class="text-[8px] text-red-500 font-bold ml-1" title="Caindo">▼</span>' : '');
+                 const probHtml = oddData.impliedProb ? `<span class="text-[8px] text-[#737373] font-mono mt-0.5 block cursor-help" title="Probabilidade Implícita: Probabilidade matemática calculada com base na odd atual (${oddData.impliedProb.toFixed(1)}%).">${oddData.impliedProb.toFixed(1)}%</span>` : '';
                  
                  rowsHtml += `
                     <td class="px-5 py-3 text-center relative">
@@ -852,6 +852,7 @@ class ScannerView {
       onPrimary: () => {
          const stake = parseFloat(document.getElementById('pick-stake').value) || 100;
          if (window.PicksService) {
+             const selObj = market.selections.find(s => s.fullName === selection);
              window.PicksService.savePick({
                  eventId: evt.id,
                  eventName: `${evt.homeTeam} x ${evt.awayTeam}`,
@@ -863,7 +864,13 @@ class ScannerView {
                  line: line !== 'null' && line !== 'undefined' ? parseFloat(line) : null,
                  bookmaker: bookmaker,
                  odd: parseFloat(odd),
-                 stake: stake
+                 stake: stake,
+                 marketSnapshot: selObj && selObj.stats ? {
+                     avg: selObj.stats.averageOdd,
+                     diff: selObj.stats.diff,
+                     dispersion: selObj.stats.dispersion,
+                     bestOdd: selObj.bestOdd
+                 } : null
              });
              window.sbApp.showToast('Palpite Salvo', 'Sua entrada foi registrada com sucesso!', 'success');
          }

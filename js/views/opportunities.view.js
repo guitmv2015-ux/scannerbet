@@ -63,22 +63,28 @@ class OpportunitiesView {
         </div>
       </div>
 
-      <!-- Toolbar de Filtros -->
-      <div class="flex flex-col md:flex-row gap-4 mb-6 items-start md:items-center justify-between">
-         <div class="flex flex-wrap gap-2 bg-[#0a0a0a] p-1.5 rounded-lg border border-[#262626] w-fit shadow-inner">
-            <button class="px-4 py-2 text-[10px] font-bold rounded-md transition-all ${this.currentFilterSport === 'ALL' ? 'bg-[#a3e635] text-black shadow-sm' : 'text-[#737373] hover:text-white hover:bg-[#141414]'}" onclick="window.OpportunitiesView.setSportFilter('ALL')">TODOS</button>
-            ${sportFilterHTML}
-         </div>
+      <!-- Toolbar de Filtros Avançados -->
+      <div class="flex flex-col md:flex-row gap-4 mb-6 items-start md:items-center justify-between bg-[#0a0a0a] p-4 rounded-xl border border-[#262626] shadow-lg">
          
-         <div class="flex items-center gap-3 bg-[#141414] border border-[#262626] px-4 py-2 rounded-lg">
-            <span class="text-xs font-bold text-[#a3a3a3] uppercase tracking-wider">Distorção Mínima:</span>
-            <select class="bg-transparent text-white text-xs font-bold outline-none cursor-pointer" onchange="window.OpportunitiesView.setDistortionFilter(this.value)">
-               <option value="1" ${this.currentFilterDistortion == 1 ? 'selected' : ''}>> 1%</option>
-               <option value="2" ${this.currentFilterDistortion == 2 ? 'selected' : ''}>> 2%</option>
-               <option value="3" ${this.currentFilterDistortion == 3 ? 'selected' : ''}>> 3%</option>
-               <option value="5" ${this.currentFilterDistortion == 5 ? 'selected' : ''}>> 5%</option>
-               <option value="10" ${this.currentFilterDistortion == 10 ? 'selected' : ''}>> 10%</option>
+         <div class="flex items-center gap-3">
+            <span class="text-[9px] font-black text-[#737373] uppercase tracking-widest">Esporte:</span>
+            <select class="bg-[#141414] border border-[#262626] text-white text-[10px] font-bold p-2 rounded cursor-pointer uppercase tracking-widest" onchange="window.OpportunitiesView.setSportFilter(this.value)">
+               <option value="ALL" ${this.currentFilterSport === 'ALL' ? 'selected' : ''}>TODOS</option>
+               ${activeSports.map(sk => `<option value="${sk}" ${this.currentFilterSport === sk ? 'selected' : ''}>${sk.replace(/_/g, ' ')}</option>`).join('')}
             </select>
+         </div>
+
+         <div class="flex flex-wrap gap-4">
+            <div class="flex items-center gap-2">
+               <span class="text-[9px] font-black text-[#737373] uppercase tracking-widest">Diferença Mínima:</span>
+               <select class="bg-[#141414] border border-[#262626] text-white text-[10px] font-bold p-2 rounded cursor-pointer" onchange="window.OpportunitiesView.setDistortionFilter(this.value)">
+                  <option value="1" ${this.currentFilterDistortion == 1 ? 'selected' : ''}>> 1%</option>
+                  <option value="2" ${this.currentFilterDistortion == 2 ? 'selected' : ''}>> 2%</option>
+                  <option value="3" ${this.currentFilterDistortion == 3 ? 'selected' : ''}>> 3%</option>
+                  <option value="5" ${this.currentFilterDistortion == 5 ? 'selected' : ''}>> 5%</option>
+                  <option value="10" ${this.currentFilterDistortion == 10 ? 'selected' : ''}>> 10%</option>
+               </select>
+            </div>
          </div>
       </div>
 
