@@ -5,7 +5,29 @@
 
 class PicksService {
   constructor() {
-    this.storageKey = 'sb_user_picks';
+    this.storageKey = 'sb_user_picks_guest';
+    this.picks = [];
+    
+    if (window.sbState) {
+       window.sbState.subscribe((state) => {
+          const user = state.user;
+          if (user && user.picksRef) {
+             if (this.storageKey !== user.picksRef) {
+                this.storageKey = user.picksRef;
+                this.picks = this._loadPicks();
+             }
+          } else if (!user) {
+             this.storageKey = 'sb_user_picks_guest';
+             this.picks = [];
+          }
+       });
+
+       const initUser = window.sbState.getState().user;
+       if (initUser && initUser.picksRef) {
+          this.storageKey = initUser.picksRef;
+       }
+    }
+    
     this.picks = this._loadPicks();
   }
 

@@ -7,7 +7,6 @@ class ScannerBetApp {
     this.routes = {
       'landing': window.LandingView,
       'auth-login': window.AuthView,
-      'auth-register': window.AuthView,
       'onboarding': window.OnboardingView,
       'dashboard': window.DashboardView,
       'scanner': window.ScannerView,
@@ -29,6 +28,11 @@ class ScannerBetApp {
     // Initial theme set
     const state = window.sbState.getState();
     document.documentElement.className = state.theme || 'dark';
+
+    // Initialize Auth Listener FIRST (Fase 7)
+    if (window.AuthService && window.AuthService.initializeAuthListener) {
+      window.AuthService.initializeAuthListener();
+    }
 
     // Subscribe to state changes to re-render navbar/sidebar
     window.sbState.subscribe((newState) => {
@@ -60,7 +64,7 @@ class ScannerBetApp {
     const state = window.sbState.getState();
     
     // Auth Guard check for protected routes
-    const publicViews = ['landing', 'auth-login', 'auth-register', 'blog', 'plans', 'help'];
+    const publicViews = ['landing', 'auth-login', 'blog', 'plans', 'help'];
     if (!state.user && !publicViews.includes(viewId)) {
       viewId = 'auth-login';
     }
@@ -72,7 +76,6 @@ class ScannerBetApp {
     const ViewClass = this.routes[viewId];
     if (ViewClass) {
       if (viewId === 'auth-login') ViewClass.renderLogin();
-      else if (viewId === 'auth-register') ViewClass.renderSignup();
       else ViewClass.render(params);
     }
   }
