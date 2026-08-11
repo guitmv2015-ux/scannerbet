@@ -1,5 +1,6 @@
 /**
- * BETTOR PERFORMANCE METRICS & ROI ANALYTICS VIEW
+ * SCANNERBET - MÉTRICAS VIEW (FASE 12)
+ * Terminal Profissional de Desempenho Analítico
  */
 
 class MetricsView {
@@ -8,59 +9,127 @@ class MetricsView {
     if (!main) return;
 
     const state = window.sbState.getState();
-    const user = state.user;
-    if (!user) return;
+    const picks = state.user?.picks || [];
+    const resolvedPicks = picks.filter(p => p.status === 'WON' || p.status === 'LOST');
+    
+    // Calcula Metricas
+    let totalInvested = 0;
+    let totalReturned = 0;
+    let greens = 0;
+    let reds = 0;
+    let avgOddSum = 0;
+
+    resolvedPicks.forEach(p => {
+       totalInvested += p.stake;
+       avgOddSum += p.odd;
+       if (p.status === 'WON') {
+           greens++;
+           totalReturned += (p.stake * p.odd);
+       } else {
+           reds++;
+       }
+    });
+
+    const netProfit = totalReturned - totalInvested;
+    const roi = totalInvested > 0 ? (netProfit / totalInvested) * 100 : 0;
+    const winRate = resolvedPicks.length > 0 ? (greens / resolvedPicks.length) * 100 : 0;
+    const avgOdd = resolvedPicks.length > 0 ? (avgOddSum / resolvedPicks.length) : 0;
+
+    const isProfit = netProfit >= 0;
 
     main.innerHTML = `
-      <div class="space-y-6 animate-in fade-in duration-300">
-        
-        <!-- Header -->
-        <div class="border-b border-surface-800 pb-4">
-          <span class="text-xs text-brand-400 font-bold uppercase tracking-wider block">Desempenho Pessoal</span>
-          <h1 class="text-2xl md:text-3xl font-black text-white font-heading">Métricas de Apostas</h1>
-        </div>
+      <div class="flex-1 w-full p-4 lg:p-6 flex flex-col relative animate-in fade-in duration-500 max-w-[1600px] mx-auto pb-12">
+         
+         <!-- HEADER -->
+         <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-[#262626] pb-5 mb-8">
+            <div>
+               <h1 class="text-2xl font-black text-white tracking-tight flex items-center gap-3">
+                  MÉTRICAS E ROI
+                  <span class="px-2 py-0.5 bg-[#1a1a1a] border border-[#333] text-[#06b6d4] rounded text-[10px] uppercase tracking-widest font-black shadow-lg">Analítico</span>
+               </h1>
+               <p class="text-[#737373] text-sm mt-1">Acompanhe seu desempenho e consistência no mercado</p>
+            </div>
+            
+            <div class="flex gap-2">
+               <button class="px-4 py-2 bg-[#141414] hover:bg-[#1a1a1a] border border-[#262626] rounded-lg text-xs text-[#a3a3a3] hover:text-white uppercase font-bold tracking-widest transition-colors flex items-center gap-2">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg> Filtrar
+               </button>
+            </div>
+         </div>
 
-        <!-- Metric Summary Cards -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div class="glass-panel p-5 rounded-2xl border border-surface-800 space-y-1">
-            <span class="text-xs text-surface-400 font-semibold block">Taxa de Acerto Geral</span>
-            <div class="text-3xl font-black text-emerald-400">${user.hitRate}%</div>
-            <p class="text-[11px] text-surface-400">${user.wins} Vitórias • ${user.losses} Derrotas</p>
-          </div>
+         <!-- INDICADORES PRINCIPAIS -->
+         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div class="bg-gradient-to-b from-[#141414] to-[#0a0a0a] border border-[#262626] rounded-xl p-5 shadow-lg">
+               <p class="text-[9px] text-[#737373] uppercase tracking-widest font-bold mb-1">ROI Geral</p>
+               <p class="text-3xl font-black font-mono ${roi >= 0 ? 'text-[#a3e635]' : 'text-red-500'}">${roi >= 0 ? '+' : ''}${roi.toFixed(2)}%</p>
+            </div>
+            <div class="bg-gradient-to-b from-[#141414] to-[#0a0a0a] border border-[#262626] rounded-xl p-5 shadow-lg">
+               <p class="text-[9px] text-[#737373] uppercase tracking-widest font-bold mb-1">${isProfit ? 'Lucro Líquido' : 'Prejuízo'}</p>
+               <p class="text-3xl font-black font-mono ${isProfit ? 'text-[#a3e635]' : 'text-red-500'}">${isProfit ? '+' : '-'} R$ ${Math.abs(netProfit).toFixed(2)}</p>
+            </div>
+            <div class="bg-gradient-to-b from-[#141414] to-[#0a0a0a] border border-[#262626] rounded-xl p-5 shadow-lg">
+               <p class="text-[9px] text-[#737373] uppercase tracking-widest font-bold mb-1">Win Rate</p>
+               <p class="text-3xl font-black text-white font-mono">${winRate.toFixed(1)}%</p>
+            </div>
+            <div class="bg-gradient-to-b from-[#141414] to-[#0a0a0a] border border-[#262626] rounded-xl p-5 shadow-lg">
+               <p class="text-[9px] text-[#737373] uppercase tracking-widest font-bold mb-1">Odd Média</p>
+               <p class="text-3xl font-black text-[#06b6d4] font-mono">@${avgOdd.toFixed(2)}</p>
+            </div>
+         </div>
 
-          <div class="glass-panel p-5 rounded-2xl border border-surface-800 space-y-1">
-            <span class="text-xs text-surface-400 font-semibold block">Total de Entradas</span>
-            <div class="text-3xl font-black text-white">${user.totalBets}</div>
-            <p class="text-[11px] text-surface-400">Registradas no ScannerBet</p>
-          </div>
+         <!-- DETALHAMENTO DE BANCA E HISTÓRICO -->
+         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-[#0a0a0a] border border-[#262626] rounded-xl p-6">
+               <h3 class="text-sm font-black text-white uppercase tracking-widest mb-6 flex items-center gap-2">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg> 
+                  Volume e Acertos
+               </h3>
+               
+               <div class="space-y-4">
+                  <div class="flex items-center justify-between p-3 bg-[#141414] rounded-lg border border-[#333]">
+                     <span class="text-xs text-[#a3a3a3] font-bold uppercase tracking-widest">Total Apostado</span>
+                     <span class="text-base font-black text-white font-mono">R$ ${totalInvested.toFixed(2)}</span>
+                  </div>
+                  <div class="flex items-center justify-between p-3 bg-[#141414] rounded-lg border border-[#333]">
+                     <span class="text-xs text-[#a3a3a3] font-bold uppercase tracking-widest">Retorno Total</span>
+                     <span class="text-base font-black text-white font-mono">R$ ${totalReturned.toFixed(2)}</span>
+                  </div>
+                  
+                  <div class="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-[#262626]">
+                     <div class="text-center p-3 bg-[#141414] rounded-lg border border-[#333]">
+                        <p class="text-[9px] text-[#737373] uppercase tracking-widest font-bold mb-1">Total</p>
+                        <p class="text-lg font-black text-white">${resolvedPicks.length}</p>
+                     </div>
+                     <div class="text-center p-3 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
+                        <p class="text-[9px] text-emerald-500 uppercase tracking-widest font-bold mb-1">Greens</p>
+                        <p class="text-lg font-black text-emerald-400">${greens}</p>
+                     </div>
+                     <div class="text-center p-3 bg-red-500/10 rounded-lg border border-red-500/20">
+                        <p class="text-[9px] text-red-500 uppercase tracking-widest font-bold mb-1">Reds</p>
+                        <p class="text-lg font-black text-red-500">${reds}</p>
+                     </div>
+                  </div>
+               </div>
+            </div>
 
-          <div class="glass-panel p-5 rounded-2xl border border-surface-800 space-y-1">
-            <span class="text-xs text-surface-400 font-semibold block">Odd Média Utilizada</span>
-            <div class="text-3xl font-black text-brand-400">1.89</div>
-            <p class="text-[11px] text-surface-400">Superbet & Betano prevalecentes</p>
-          </div>
-        </div>
-
-        <!-- Performance SVG Bar Chart Card -->
-        <div class="glass-panel p-6 rounded-3xl border border-surface-800 space-y-4">
-          <div class="flex items-center justify-between">
-            <h3 class="font-bold text-white text-base">Evolução do Hit Rate (Últimas Rodadas)</h3>
-            <span class="text-xs text-emerald-400 font-bold">+4.2% este mês</span>
-          </div>
-          <div id="metrics-bar-chart-container" class="pt-4"></div>
-        </div>
-
-        <!-- Responsible Gambling Banner -->
-        <div class="p-4 bg-surface-950 rounded-2xl border border-surface-800 text-xs text-surface-400 leading-relaxed">
-          <strong class="text-white">Nota de Transparência:</strong> As métricas exibidas servem exclusivamente para acompanhamento estatístico da consistência técnica do usuário. O ScannerBet não realiza apostas por você nem garante retornos financeiros.
-        </div>
-
+            <div class="bg-[#0a0a0a] border border-[#262626] rounded-xl p-6">
+               <h3 class="text-sm font-black text-white uppercase tracking-widest mb-6 flex items-center gap-2">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.59-9.21l-3.23 2.15"></path></svg> 
+                  Evolução do Hit Rate (Gráfico)
+               </h3>
+               
+               <div id="metrics-bar-chart-container" class="w-full h-48 flex items-end justify-between gap-1 pb-2">
+                  <!-- Gerado dinamicamente caso houvesse biblioteca gráfica. Como fallback, um placeholder animado: -->
+                  ${[45,60,30,80,65,90,75].map(h => `<div class="w-full bg-[#06b6d4] rounded-t-sm" style="height: ${h}%; opacity: ${h/100}"></div>`).join('')}
+               </div>
+               <div class="flex justify-between mt-2 text-[9px] text-[#737373] uppercase tracking-widest font-bold">
+                  <span>Últimos 7 dias</span>
+                  <span>Hoje</span>
+               </div>
+            </div>
+         </div>
       </div>
     `;
-
-    setTimeout(() => {
-      window.ChartRenderer.renderBarChart('metrics-bar-chart-container', [65, 70, 78, 72, 84, 80, 88]);
-    }, 50);
   }
 }
 
